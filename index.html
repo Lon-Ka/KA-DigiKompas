@@ -337,7 +337,6 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .jp-dot.filled-ict{background:var(--ict);border-color:var(--ict)}
 .jp-dot.filled-media{background:var(--media);border-color:var(--media)}
 .jp-dot.filled-comp{background:var(--comp);border-color:var(--comp)}
-
 /* ── HELP DRAWER ─────────────────────────────────────── */
 .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9000;opacity:0;pointer-events:none;transition:opacity .25s}
 .help-overlay.on{opacity:1;pointer-events:all}
@@ -362,6 +361,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .help-step-nr{flex-shrink:0;width:22px;height:22px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;background:#888}
 .help-step-txt{font-size:13px;color:#444;line-height:1.6}
 .help-footer{padding:.75rem 1.25rem;border-top:1px solid #E8E5DC;font-size:11px;color:#AAA;flex-shrink:0;text-align:center}
+
 </style>
 
 <script>
@@ -405,10 +405,7 @@ if (window.self === window.top) {
   </div>
   <span class="logo-pill">OVSG · Leer Lokaal</span>
   <nav class="topnav">
-    <button class="tnav" onclick="openHelp()" id="nav-help">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      Help
-    </button>
+    <button class="tnav" onclick="openHelp()" id="nav-help"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
     <button class="tnav" onclick="showView('zelfscan')" id="nav-zelfscan">
       <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Zelfscan
@@ -3561,7 +3558,1728 @@ function printLesson(id){
   </table>
   <h2>Evaluatiecriteria</h2><ul>${(l.eval||[]).map(e=>`<li>${e}</li>`).join('')}</ul>
   <div class="footer">DigiKompas Lonka · OVSG Leer Lokaal · Enkel voor intern gebruik · ${l.ll_doel}</div>
-  
+  </body></html>`);
+  w.document.close();w.print();
+}
+
+function copyLesson(id){
+  const l=LESSONS.find(x=>x.id===id);
+  const txt=`LES: ${l.titel}\nLeerlijn: ${l.ll_doel}\nFase: ${FL[l.f]} | Duur: ${l.duur}\nDoel: ${l.doel}\n\nLeerdoelen:\n${l.doelen.map((d,i)=>`${i+1}. ${d}`).join('\n')}\n\nMaterialen:\n${(l.materialen||[]).join('\n')}\n\nLesverloop:\n${l.stappen.map(s=>`Stap ${s.nr} (${s.tijd}): ${s.label}\n${s.omschr}${s.tip?'\n💡 '+s.tip:''}`).join('\n\n')}\n\nDifferentiatie:\n⬇ ${l.diff_support}\n⬆ ${l.diff_extend}\n\nEvaluatie:\n${(l.eval||[]).map(e=>`✓ ${e}`).join('\n')}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btns=document.querySelectorAll('.dfooter .btn');
+    if(btns[1]){btns[1].textContent='✓ Gekopieerd!';setTimeout(()=>{btns[1].textContent='📋 Kopieer samenvatting';},2200);}
+  });
+}
+
+// ═══════════════════════════════════════════
+// LEERLIJN
+// ═══════════════════════════════════════════
+function renderLL(){
+  const cont=document.getElementById('ll-content');
+  const FASEN=[{id:'1',l:'Fase 1',s:'Kleuters + L1'},{id:'2',l:'Fase 2',s:'L2 + L3'},{id:'3',l:'Fase 3',s:'L4 + L5'},{id:'4',l:'Fase 4',s:'L6'}];
+  const LLS=[{id:'ict',l:'ICT-basisvaardigheden',c:'var(--ict)',bg:'var(--ict-l)'},{id:'comp',l:'Computationeel denken',c:'var(--comp)',bg:'var(--comp-l)'},{id:'media',l:'Mediawijsheid',c:'var(--media)',bg:'var(--media-l)'}];
+    const fasenHeaders = FASEN.map(f=>'<th style="background:'+(f.id==='1'?'#f2f1ed':f.id==='2'?'#eef0f5':f.id==='3'?'#f0edf5':'#eff5ed')+'">'+f.l+'<div style="font-size:10px;font-weight:400;color:var(--muted)">'+f.s+'</div></th>').join('');
+  const llRows = LLS.map(ll=>{
+    const cells = FASEN.map(f=>{
+      const ls=LESSONS.filter(l=>l&&l.ll===ll.id&&l.f===f.id);
+      const chips = ls.length ? ls.map(l=>'<div class="chip" style="background:'+ll.bg+';color:'+ll.c+'" onclick="openLessonLL('+l.id+')">'+l.titel+'</div>').join('') : '<div style="color:var(--muted);font-size:11px;padding:6px">—</div>';
+      return '<td>'+chips+'</td>';
+    }).join('');
+    return '<tr><td class="rlab" style="background:'+ll.bg+';color:'+ll.c+';font-size:12px;font-weight:700;white-space:nowrap">'+ll.l+'</td>'+cells+'</tr>';
+  }).join('');
+  cont.innerHTML='<table><tr><th class="rh">Leerlijn</th>'+fasenHeaders+'</tr>'+llRows+'</table>';
+}
+function openLessonLL(id){showView('lessen');openId=id;renderGrid();}
+
+// ═══════════════════════════════════════════
+// ZELFSCAN
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// ZELFSCAN — FASE-BEWUST
+// ═══════════════════════════════════════════
+const ZSQ = {
+  '1': { // Kleuters + L1
+    ict: [
+      'Ik laat leerlingen kennismaken met digitale toestellen (tablet, digibord, computer) op een speelse manier.',
+      'Ik bespreek hoe je een tablet of computer correct vasthoudt en voorzichtig behandelt.',
+      'Ik gebruik het digibord actief als interactief leermiddel (niet enkel als scherm).',
+      'Ik laat leerlingen eenvoudige handelingen uitvoeren: klikken, slepen, scherm aanraken.',
+      'Ik spreek over het verschil tussen een scherm en een boek als informatiebron.',
+    ],
+    media: [
+      'Ik bespreek met leerlingen welke schermen zij kennen en waarvoor ze dienen.',
+      'Ik leer leerlingen het onderscheid tussen "echt" (foto, reportage) en "verzonnen" (tekenfilm, sprookje).',
+      'Ik bespreek wanneer en hoelang schermen zinvol zijn (bewust gebruik).',
+      'Ik leer leerlingen bij twijfel over een beeld of verhaal hulp te vragen aan een volwassene.',
+      'Ik introduceer de begrippen "echt" en "verzonnen" als denkkaders bij mediabeelden.',
+    ],
+    comp: [
+      'Ik laat leerlingen eenvoudige stappenplannen uitvoeren (bv. robot-spel, dansprogramma).',
+      'Ik gebruik unplugged activiteiten om algoritmisch denken te introduceren (bv. mens-als-robot).',
+      'Ik laat leerlingen patronen herkennen en verder zetten (kleur, vorm, geluid).',
+      'Ik laat leerlingen instructies geven aan een medeleerling (puzzel, parcours).',
+      'Ik introduceer het begrip "volgorde" als onderdeel van instructies.',
+    ],
+  },
+  '2': { // L2 + L3
+    ict: [
+      'Ik leer leerlingen correct typen: letters, spatie, backspace en enter.',
+      'Ik bespreek hoe je bestanden bewaart, hernoemt en terugvindt.',
+      'Ik oefen met leerlingen hoe ze veilig inloggen en uitloggen op de schoolomgeving.',
+      'Ik laat leerlingen eenvoudige digitale tekeningen of documenten maken.',
+      'Ik leer leerlingen basishandelingen: kopiëren, knippen, plakken (Ctrl+C, X, V).',
+    ],
+    media: [
+      'Ik bespreek met leerlingen wat reclame is en hoe ze het herkennen.',
+      'Ik leer leerlingen controlevragen stellen bij informatie die ze online vinden.',
+      'Ik praat over toestemming vragen voor foto\'s en het delen van beelden.',
+      'Ik bespreek cyberpesten: wat het is, hoe je het herkent en wat je doet.',
+      'Ik leer leerlingen het verschil kennen tussen openbare en privé-informatie.',
+    ],
+    comp: [
+      'Ik laat leerlingen eenvoudige algoritmen schrijven voor alledaagse taken.',
+      'Ik bespreek "als … dan …"-redenering via eenvoudige situaties of spelen.',
+      'Ik laat leerlingen fouten zoeken en verbeteren in een reeks instructies (debuggen).',
+      'Ik gebruik unplugged activiteiten voor decompositie (grote taak opdelen).',
+      'Ik laat leerlingen patronen herkennen en toepassen in een eenvoudige context.',
+    ],
+  },
+  '3': { // L4 + L5
+    ict: [
+      'Ik leer leerlingen doelgericht zoeken op internet met efficiënte zoektermen.',
+      'Ik laat leerlingen zelfstandig een digitale presentatie of document maken.',
+      'Ik bespreek hoe je e-mail schrijft en antwoordt (structuur, toon, bijlage).',
+      'Ik laat leerlingen samenwerken in een gedeeld online document.',
+      'Ik leer leerlingen bronnen beoordelen op betrouwbaarheid en die correct vermelden.',
+    ],
+    media: [
+      'Ik leer leerlingen nepnieuws herkennen via een fact-checklist.',
+      'Ik bespreek privacy en persoonsgegevens: wat is privé, wat mag je delen?',
+      'Ik bespreek beeldmanipulatie en hoe je bewerkte foto\'s herkent.',
+      'Ik praat over auteursrecht en Creative Commons bij het gebruik van online materiaal.',
+      'Ik bespreek hoe online communicatie tot misverstanden kan leiden (toon, emoji, context).',
+    ],
+    comp: [
+      'Ik laat leerlingen programmeren in Scratch (sprites, beweging, dialogen).',
+      'Ik gebruik decompositie als werkstrategie bij complexere opdrachten.',
+      'Ik leer leerlingen herhaling en lussen toepassen in een programma.',
+      'Ik bespreek variabelen als "geheugen" van een programma (score, levens).',
+      'Ik gebruik binaire code of netwerksimulaties als unplugged activiteiten.',
+    ],
+  },
+  '4': { // L6
+    ict: [
+      'Ik leer leerlingen meerdere spreadsheetfuncties (GEMIDDELDE, MIN, MAX, ALS) toepassen.',
+      'Ik bespreek phishing, spoofing en social engineering als online veiligheidsrisico\'s.',
+      'Ik laat leerlingen bronnen citeren en plagiaat vermijden in hun opdrachten.',
+      'Ik bespreek cloudtools voor samenwerking en de bijbehorende privacyvragen.',
+      'Ik leer leerlingen de juiste digitale tool kiezen afhankelijk van de taak.',
+    ],
+    media: [
+      'Ik bespreek filterbubbels en hoe aanbevelingsalgoritmen bepalen wat leerlingen zien.',
+      'Ik ga in op deepfakes en geavanceerde digitale misleiding.',
+      'Ik bespreek mediabias: hoe brengen verschillende media hetzelfde feit?',
+      'Ik laat leerlingen reflecteren op hun schermtijd en digitaal welzijn.',
+      'Ik bespreek digitale reputatie en de langetermijn-impact van online gedrag.',
+    ],
+    comp: [
+      'Ik laat leerlingen een volledig mini-project programmeren in Scratch (spel, verhaal).',
+      'Ik bespreek abstractie: herhalende code vervangen door herbruikbare blokken.',
+      'Ik laat leerlingen nadenken over hoe AI leert van data (machine learning).',
+      'Ik bespreek datastructuren: variabelen, lijsten en tabellen.',
+      'Ik laat leerlingen ethische dilemma\'s rond technologie bespreken en beargumenteren.',
+    ],
+  },
+};
+
+// Fase-specifieke tips per leerlijn
+const ZS_TIPS = {
+  '1': {
+    ict: 'Focus op het veilig en voorzichtig omgaan met toestellen. Lessen hoeven niet lang te zijn: korte, speelse kennismaking werkt het best voor kleuters en L1.',
+    media: 'Verken het medialandschap van de leerling via kringgesprekken. Vermijd schermtijd-schuldgevoel — focus op bewustzijn en nieuwsgierigheid.',
+    comp: 'Gebruik unplugged activiteiten: robotspelen, dans-codes, patronen. Geen scherm nodig. De beweging en het spel zijn het leren.',
+  },
+  '2': {
+    ict: 'Bouw routines op: altijd opslaan, altijd uitloggen. Herhaling en consequentie zijn belangrijker dan snelheid.',
+    media: 'Bespreek concrete situaties uit de belevingswereld van L2–L3. Reclame voor speelgoed, foto\'s op de klasgroep — herkenbare voorbeelden landen het best.',
+    comp: 'Combineer unplugged (boterham-algoritme, robotspel) met eenvoudige digitale tools (Scratch Jr., Bee-Bot). Laat leerlingen fouten maken en herstellen.',
+  },
+  '3': {
+    ict: 'Embed ICT in andere vakken: zoek bronnen bij WO, maak een presentatie voor een boekbespreking. ICT als middel, niet als doel.',
+    media: 'Gebruik actuele voorbeelden (met de nodige omzichtigheid). Leerlingen van L4–L5 zijn actief op sociale media — sluit daarbij aan.',
+    comp: 'Scratch projecten worden rijker als leerlingen eigen ideeën uitwerken. Geef kader maar laat maximale creatieve vrijheid. Bespreek code van medeleerlingen.',
+  },
+  '4': {
+    ict: 'L6 kan zelfstandig complexe digitale taken uitvoeren. Leg de lat hoog: professionele documentopmaak, bronvermelding, spreadsheetanalyse.',
+    media: 'Debat en opiniestuk zijn krachtige werkvormen. Leerlingen van L6 kunnen genuanceerd argumenteren als je hen de kans geeft.',
+    comp: 'Koppel aan beroepen en toekomst: softwareontwikkelaar, data-analist, AI-ethicus. Maak de abstractie tastbaar via echte toepassingen.',
+  },
+};
+
+let zsActivePhase = null;
+
+function setZSPhase(fase, btn) {
+  zsActivePhase = fase;
+  document.querySelectorAll('.zs-phase-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderZSContent(fase);
+}
+
+function renderZS() {
+  const cont = document.getElementById('zs-content');
+  cont.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:1.5rem;text-align:center;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius-sm)">
+    Kies een fase hierboven om de zelfscan te starten.
+  </div>`;
+  zsActivePhase = null;
+  document.querySelectorAll('.zs-phase-btn').forEach(b => b.classList.remove('active'));
+}
+
+function renderZSContent(fase) {
+  const cont = document.getElementById('zs-content');
+  const questions = ZSQ[fase];
+  if (!questions) return;
+
+  const FASE_LABELS = {
+    '1': 'Fase 1 · Kleuters + L1',
+    '2': 'Fase 2 · L2 + L3',
+    '3': 'Fase 3 · L4 + L5',
+    '4': 'Fase 4 · L6',
+  };
+  const SEC = { ict: 'ICT-basisvaardigheden', media: 'Mediawijsheid', comp: 'Computationeel denken' };
+  const OPTS = ['Nog niet', 'Soms', 'Regelmatig', 'Altijd'];
+
+  let html = `<div style="background:var(--ict-l);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;color:var(--ict-d);margin-bottom:1rem;font-weight:600">
+    📋 Zelfscan voor <strong>${FASE_LABELS[fase]}</strong> — ${questions.ict.length * 3} vragen over de 3 leerlijnen
+  </div>`;
+
+  ['ict', 'comp', 'media'].forEach(ll => {
+    html += `<div class="zs-sec">
+      <div class="zs-sec-t ${ll}">${SEC[ll]}</div>
+      ${questions[ll].map((v, i) => {
+        const qi = `${fase}_${ll}_${i}`;
+        return `<div class="zsq">
+          <div class="zsq-t">${v}</div>
+          <div class="zsopts">${OPTS.map((o, j) => `<button class="zsopt" data-qi="${qi}" data-v="${j}" data-ll="${ll}" onclick="zsSelect(this)">${o}</button>`).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  html += `<button class="zs-btn" onclick="doZS('${fase}')">Bekijk mijn resultaat</button>
+  <div class="zs-res" id="zs-res"></div>`;
+
+  cont.innerHTML = html;
+}
+
+function zsSelect(btn) {
+  const qi = btn.dataset.qi, ll = btn.dataset.ll;
+  document.querySelectorAll(`[data-qi="${qi}"]`).forEach(b => {
+    b.classList.remove('s-ict', 's-media', 's-comp');
+  });
+  btn.classList.add(`s-${ll}`);
+}
+
+// ── Professionaliserings­aanbevelingen per leerlijn/fase ──
+const ZS_PROF = {
+  '1': {
+    ict: {
+      laag: {
+        focus: 'Eerste stappen met toestellen',
+        acties: [
+          'Plan 1 les per maand waarbij leerlingen een tablet of digibord vasthouden en bedienen.',
+          'Gebruik de les "Veilig omgaan met een tablet" als startpunt — kort, concreet en onmiddellijk inzetbaar.',
+          'Spreek met een collega af om ICT samen voor te bereiden: één leerkracht voorbereidt, twee geven les.',
+        ],
+        vorming: 'Vraag de directie om een korte interne vorming: "Tablets in de kleuterklas" (60 min, intern of via OVSG).',
+        tijdlijn: 'Start volgende week met 1 unplugged activiteit. Voeg elke maand 1 korte digitale activiteit toe.',
+      },
+      midden: {
+        focus: 'Routines verankeren',
+        acties: [
+          'Maak van het digibord een dagelijks instrument: gebruik het bij de dagopening of voor een verhaal.',
+          'Introduceer een vaste "digitale hoek" in de klas voor kleuterverkenning.',
+          'Probeer de les "Klikken en slepen" — de leerlingen oefenen muisvaardigheden terwijl jij rondloopt.',
+        ],
+        vorming: 'Volg een korte tutorial op KlasCement of YouTube over "digibord voor kleuteronderwijs".',
+        tijdlijn: 'Richt je de komende 2 maanden op ICT-integratie in 2 bestaande lessen per week.',
+      },
+      hoog: {
+        focus: 'Verdiepen en inspireren',
+        acties: [
+          'Deel jouw aanpak met een teamgenoot: documenteer 1 activiteit per trimester.',
+          'Probeer een nieuwe tool of app die je nog niet gebruikte.',
+          'Word een "ICT-vraagbaak" voor collega\'s van Fase 1.',
+        ],
+        vorming: 'Verken de OVSG-professionaliseringsmodule rond Fase 1 verdieping.',
+        tijdlijn: 'Jouw ICT-praktijk is al sterk — focus op verspreiding naar het team.',
+      },
+    },
+    media: {
+      laag: {
+        focus: 'Media bewust verkennen',
+        acties: [
+          'Begin met een kringgesprek over schermen: welke kennen jullie leerlingen? (les "Schermen om ons heen")',
+          'Gebruik echte prentenboeken en vergelijk ze met een digitaal verhaal op het digibord.',
+          'Bespreek 1× per maand een "echt of verzonnen"-moment naar aanleiding van een verhaal of nieuwsje.',
+        ],
+        vorming: 'Bekijk het gratis Mediawijs-startpakket voor kleuterleerkrachten op mediawijs.be.',
+        tijdlijn: 'Start met 1 media-moment per maand. Bouw op naar 1 per week in het 2e trimester.',
+      },
+      midden: {
+        focus: 'Kritisch kijken integreren',
+        acties: [
+          'Voeg "echt of verzonnen?"-vragen toe aan bestaande leesinstructie.',
+          'Gebruik de les "Mijn dag in media" als startpunt voor een klasgesprek.',
+          'Betrek ouders: geef een mini-briefje mee over schermtijd en bewust mediagebruik.',
+        ],
+        vorming: 'Volg de Mediawijs-basisopleiding online (zelfstandig, 2 uur).',
+        tijdlijn: 'Werk mediawijsheid de komende 3 maanden uit als terugkerend gesprekspunt.',
+      },
+      hoog: {
+        focus: 'Mediawijsheid verankeren in het curriculum',
+        acties: [
+          'Maak een "media-hoek" in de klas met krantenknipsels, affiches en tijdschriften.',
+          'Koppel mediawijsheid expliciet aan je thematisch werken.',
+          'Documenteer en deel je aanpak met het team.',
+        ],
+        vorming: 'Verdiep je in het Mediawijs Competentiemodel en gebruik het als kapstok voor je team.',
+        tijdlijn: 'Jouw mediapraktijk is sterk — stel voor om het teambreed te bespreken.',
+      },
+    },
+    comp: {
+      laag: {
+        focus: 'Unplugged starten',
+        acties: [
+          'Begin met het robotspel "De menselijke robot" — geen materiaal nodig, 30 minuten, groot plezier.',
+          'Gebruik het patroonoefenspel tijdens knutsel- of constructiemomenten.',
+          'Bespreek "volgorde" expliciet bij klastaakjes: "Wat doe je eerst? Wat daarna?"',
+        ],
+        vorming: 'Bekijk de OVSG-video over computationeel denken in de kleuterklas (< 20 min).',
+        tijdlijn: 'Eén unplugged CT-activiteit per maand is een prima start voor Fase 1.',
+      },
+      midden: {
+        focus: 'Algoritmen in het dagelijks leven',
+        acties: [
+          'Maak stappenplannen zichtbaar: hang het "ochtendritueel-algoritme" op in de klas.',
+          'Probeer de Bee-Bot-simulator voor de digitale verlenging van unplugged activiteiten.',
+          'Integreer patroonherkenning in wiskunde­lessen.',
+        ],
+        vorming: 'Gebruik de gratis CS Unplugged-activiteiten op csunplugged.org.',
+        tijdlijn: 'Combineer de komende 2 maanden unplugged en Bee-Bot/digitaal afwisselend.',
+      },
+      hoog: {
+        focus: 'Verdiepen en uitbreiden',
+        acties: [
+          'Introduceer Scratch Jr. als digitaal verlengstuk.',
+          'Maak CT een expliciete lesdoelstelling in je planning.',
+          'Begeleid een collega bij de start met CT-activiteiten.',
+        ],
+        vorming: 'Verken Scratch Jr. via de gratis online tutorials op scratchjr.org.',
+        tijdlijn: 'Jouw CT-praktijk is sterk — ga voor Scratch Jr. als volgende stap.',
+      },
+    },
+  },
+  '2': {
+    ict: {
+      laag: {
+        focus: 'Basisroutines opbouwen',
+        acties: [
+          'Start met de les "Typen op het toetsenbord" — 45 minuten, duidelijk stappenplan.',
+          'Maak inloggen en uitloggen een wekelijkse routine voor de hele klas.',
+          'Gebruik "Mappen en bestanden beheren" als opvolgles voor bewaren en terugvinden.',
+        ],
+        vorming: 'Vraag IT-coördinator of directie voor een korte sessie over de schoolomgeving (bv. Office 365 of Google Workspace).',
+        tijdlijn: 'Plan 2 ICT-momenten per maand. Bouw in 3 maanden tot 1 per week.',
+      },
+      midden: {
+        focus: 'ICT inbedden in vakken',
+        acties: [
+          'Laat leerlingen een tekst typen over een WO-thema — zo combineert ICT en vakinhoud.',
+          'Gebruik Ctrl+C/V bewust in een opdracht waar leerlingen iets kopiëren en aanpassen.',
+          'Stel een klasmapregel op: elk kind heeft een eigen map met logische submappen.',
+        ],
+        vorming: 'Bekijk 1 KlasCement-les per maand als inspiratie voor ICT-integratie in jouw vak.',
+        tijdlijn: 'Koppel ICT de komende 2 maanden expliciet aan 1 vaklesstof (bv. taal of WO).',
+      },
+      hoog: {
+        focus: 'Uitbreiden en delen',
+        acties: [
+          'Laat leerlingen een eenvoudige digitale presentatie maken voor een les.',
+          'Deel jouw routines (inloggen, mappenstructuur) als template met collega\'s.',
+          'Probeer een collaboratieve tool (gedeeld document) voor een groepswerk.',
+        ],
+        vorming: 'Bekijk de verdiepende OVSG-modules rond ICT-integratie in het lager onderwijs.',
+        tijdlijn: 'Voeg dit trimester een nieuw ICT-element toe aan een bestaande vakles.',
+      },
+    },
+    media: {
+      laag: {
+        focus: 'Reclame en bronnen bewust bespreken',
+        acties: [
+          'Gebruik de les "Reclame herkennen" — tijdschriften, stiften, grote vellen: geen technologie nodig.',
+          'Stel na elk informatiezoekopdracht 1 vraag: "Hoe weet je dat dit klopt?"',
+          'Houd de cyberpesten-bespreking 1× per jaar, bij voorkeur na een incident of preventief in september.',
+        ],
+        vorming: 'Download het gratis Mediawijs-lessenpakket voor L2–L3 op mediawijs.be.',
+        tijdlijn: 'Kies 1 mediawijsheidsles per maand. Varieer: 1 rond reclame, 1 rond bronnen, 1 rond privacy.',
+      },
+      midden: {
+        focus: 'Kritisch denken verankeren',
+        acties: [
+          'Maak van "Hoe weet je dat?" een klasregel bij elk nieuws of feit dat binnenkomt.',
+          'Bespreek toestemmingsregels voor foto\'s expliciet vóór een uitstap.',
+          'Gebruik de les "Betrouwbare bronnen" gecombineerd met een WO-opzoekingsopdracht.',
+        ],
+        vorming: 'Volg de Mediawijs-basisopleiding (zelfstandig, 2 uur, gratis op mediawijs.be).',
+        tijdlijn: 'Integreer mediawijsheid in 1 bestaande les per maand als extra kritische vraag.',
+      },
+      hoog: {
+        focus: 'Media-onderwijs verdiepen',
+        acties: [
+          'Laat leerlingen zelf een mini-nieuwsbrief samenstellen (les "Knip en plak nieuwsbrief").',
+          'Koppel mediawijsheid aan burgerschapsvorming.',
+          'Documenteer en deel jouw aanpak met het team.',
+        ],
+        vorming: 'Verken het Mediawijs-competentiemodel als kapstok voor een teamgesprek.',
+        tijdlijn: 'Jouw mediapraktijk is al sterk — stel een teamgerichte sessie voor.',
+      },
+    },
+    comp: {
+      laag: {
+        focus: 'Eerste algoritme-ervaringen',
+        acties: [
+          'Start met "Een algoritme schrijven" — de boterhammetjes-les werkt altijd, kost niets.',
+          'Maak van foutloos volgen van instructies een spelregel: letterlijk uitvoeren.',
+          'Gebruik "Als-dan-anders"-kaartjes bij keuze-situaties in de klas.',
+        ],
+        vorming: 'Bekijk de CS Unplugged-activiteiten voor L2–L3 op csunplugged.org (gratis).',
+        tijdlijn: '1 CT-activiteit per maand, afwisselend unplugged en digitaal.',
+      },
+      midden: {
+        focus: 'CT koppelen aan andere vakken',
+        acties: [
+          'Gebruik stappenplannen expliciet bij wiskunde-algoritmen (staartdeling, enz.).',
+          'Laat leerlingen Scratch Jr. of Scratch verkennen voor de eerste keer.',
+          'Gebruik "Bugs zoeken en oplossen" als meta-leer­vaardigheid bij foutanalyse in taal of wiskunde.',
+        ],
+        vorming: 'Volg de gratis Scratch-introductiecursus op scratch.mit.edu/educators.',
+        tijdlijn: 'Combineer de komende 3 maanden 1 digitale en 1 unplugged CT-les per maand.',
+      },
+      hoog: {
+        focus: 'Programmeren integreren',
+        acties: [
+          'Bouw een Scratch-project in de klas als meerdaags project.',
+          'Laat leerlingen elkaars code debuggen.',
+          'Koppel decompositie expliciet aan project­matig werken.',
+        ],
+        vorming: 'Verken Scratch for educators (scratch.mit.edu/educators) voor meer klasprojecten.',
+        tijdlijn: 'Voer dit schooljaar 1 meerdaags Scratch-project uit.',
+      },
+    },
+  },
+  '3': {
+    ict: {
+      laag: {
+        focus: 'Doelgericht zoeken en verwerken',
+        acties: [
+          'Gebruik de les "Doelgericht zoeken op internet" gecombineerd met een WO-opdracht.',
+          'Stel een vaste bronvermeldingsregel in voor alle opdrachten.',
+          'Laat leerlingen 1× per maand een korte digitale presentatie maken.',
+        ],
+        vorming: 'Vraag de ICT-coördinator voor een demo van de schoolzoekomgeving.',
+        tijdlijn: '2 ICT-gerichte lessen per maand in combinatie met andere vakken.',
+      },
+      midden: {
+        focus: 'Samenwerken en communiceren',
+        acties: [
+          'Gebruik gedeelde documenten voor een groepswerk (les "Samenwerken in de cloud").',
+          'Leer leerlingen correct e-mailen via de schoolomgeving.',
+          'Bespreek de keuze van de juiste tool voor de juiste taak.',
+        ],
+        vorming: 'Volg een korte tutorial over Google Workspace for Education of Office 365 for Schools.',
+        tijdlijn: 'Voeg dit trimester 1 collaboratief ICT-project toe.',
+      },
+      hoog: {
+        focus: 'Uitbreiden naar data en analyse',
+        acties: [
+          'Start met een eenvoudig spreadsheet-project gekoppeld aan WO (bv. weersdata).',
+          'Laat leerlingen bronnen citeren in een echt onderzoeksverslag.',
+          'Gebruik digitale tools bewust als keuze, niet als vanzelfsprekendheid.',
+        ],
+        vorming: 'Verken OVSG-professionaliseringsaanbod voor ICT in Fase 3.',
+        tijdlijn: 'Voer dit schooljaar 1 data-georiënteerd project uit.',
+      },
+    },
+    media: {
+      laag: {
+        focus: 'Kritisch lezen opbouwen',
+        acties: [
+          'Gebruik de les "Nepnieuws herkennen" — 3 berichten, 5 vragen, 55 minuten.',
+          'Voeg na elke internetopdracht de vraag toe: "Hoe betrouwbaar is jouw bron?"',
+          'Bespreek privacy en persoonsgegevens voorafgaand aan een project met online tools.',
+        ],
+        vorming: 'Download het gratis fact-check-pakket van Mediawijs voor L4–L5.',
+        tijdlijn: '1 mediawijsheidsles per maand, varieer tussen nepnieuws, privacy en beelden.',
+      },
+      midden: {
+        focus: 'Dieper kritisch denken',
+        acties: [
+          'Combineer de les "Beelden manipuleren" met een kunstles of WO-opdracht.',
+          'Gebruik auteursrecht als leermomment bij elk project met afbeeldingen.',
+          'Laat leerlingen elkaars bronnen beoordelen.',
+        ],
+        vorming: 'Verken de Creative Commons-module op mediawijs.be.',
+        tijdlijn: 'Integreer mediawijsheid structureel in WO-opdrachten dit trimester.',
+      },
+      hoog: {
+        focus: 'Maatschappelijke verbinding',
+        acties: [
+          'Gebruik "Mijn digitale voetafdruk" als springplank naar een klasdiscussie over privacy.',
+          'Laat leerlingen een mini-opiniestuk schrijven over een mediastelling.',
+          'Koppel mediawijsheid aan burgerschapsvorming en WO-thema\'s.',
+        ],
+        vorming: 'Verdiep je in het Mediawijs-competentiemodel niveau 3.',
+        tijdlijn: 'Jouw mediapraktijk is sterk — leid een teamgesprek over aanpak in Fase 3.',
+      },
+    },
+    comp: {
+      laag: {
+        focus: 'Scratch als startpunt',
+        acties: [
+          'Plan de les "Programmeren met Scratch — eerste stappen" als meerdaags project.',
+          'Gebruik decompositie expliciet bij een grote klasopdracht.',
+          'Probeer 1 unplugged CT-activiteit per maand als voorbereiding of afwisseling.',
+        ],
+        vorming: 'Volg de gratis Scratch-introductiecursus op scratch.mit.edu/educators.',
+        tijdlijn: 'Begin dit trimester met Scratch — 3 opeenvolgende lessen volstaan als start.',
+      },
+      midden: {
+        focus: 'Verdiepen in Scratch',
+        acties: [
+          'Voeg variabelen toe aan een bestaand Scratch-project (les "Variabelen").',
+          'Laat leerlingen lussen bewust toepassen voor een herhalende actie.',
+          'Koppel binaire code aan wiskunde (tientallig stelsel vs. tweetallig).',
+        ],
+        vorming: 'Verken de Scratch-wiki en de community voor klasprojecten.',
+        tijdlijn: 'Bouw dit schooljaar 2 Scratch-projecten uit: één in het 1e en één in het 2e trimester.',
+      },
+      hoog: {
+        focus: 'Complexere projecten',
+        acties: [
+          'Laat leerlingen een eigen spel of animatie ontwerpen met meerdere sprites.',
+          'Introduceer debugging als expliciete vaardigheid.',
+          'Gebruik netwerksimulatie als unplugged les voor verbinding met internet-thema\'s.',
+        ],
+        vorming: 'Verken de OVSG CT-verdiepingsmodule voor Fase 3.',
+        tijdlijn: 'Voer dit schooljaar 1 volledig gepland CT-project uit.',
+      },
+    },
+  },
+  '4': {
+    ict: {
+      laag: {
+        focus: 'Professionele ICT-vaardigheden',
+        acties: [
+          'Introduceer de ALS-functie in een spreadsheet gekoppeld aan een klasonderzoek.',
+          'Gebruik de les "Phishing herkennen" — actueel en onmiddellijk relevant voor L6.',
+          'Eis bronvermelding bij elke opdracht — leg eenmalig uit hoe, en houd er aan vast.',
+        ],
+        vorming: 'Vraag een demo van de schoolomgeving (Teams, Drive) voor gebruik in L6-opdrachten.',
+        tijdlijn: '2 ICT-lessen per maand, gekoppeld aan het project­matig werk van L6.',
+      },
+      midden: {
+        focus: 'ICT als onderzoekstool',
+        acties: [
+          'Laat leerlingen een data-analyse uitvoeren voor een WO-project (spreadsheet + grafiek).',
+          'Gebruik collaboratieve tools voor groepswerken die doorlopen over meerdere weken.',
+          'Bespreek de keuze van tools bewust: wanneer gebruik je welk programma?',
+        ],
+        vorming: 'Verken de OVSG-modules rond ICT en onderzoekend leren in L6.',
+        tijdlijn: 'Voer dit trimester 1 data-georiënteerd groepsproject uit.',
+      },
+      hoog: {
+        focus: 'ICT als levensvaardigheid',
+        acties: [
+          'Koppel ICT aan de overgang naar secundair: welke vaardigheden zijn essentieel?',
+          'Laat leerlingen hun eigen "digitaal portfolio" opbouwen doorheen het jaar.',
+          'Bespreek online veiligheid in de context van hun toekomstige online leven.',
+        ],
+        vorming: 'Verdiep je in de overgang basisonderwijs-secundair rond digitale geletterdheid.',
+        tijdlijn: 'Jouw ICT-praktijk is sterk — focus op de verticale lijn naar het secundair.',
+      },
+    },
+    media: {
+      laag: {
+        focus: 'Kritisch mediagebruik voor L6',
+        acties: [
+          'Gebruik de les "Filterbubbels en aanbevelingsalgoritmen" — sluit aan bij hun dagelijks gebruik.',
+          'Bespreek online reputatie als voorbereiding op sociale media in het secundair.',
+          'Doe de fact-check-oefening met 3 berichten na elk nieuwsgebeuren.',
+        ],
+        vorming: 'Download het Mediawijs-pakket voor L6 op mediawijs.be.',
+        tijdlijn: '1 mediawijsheidsles per maand in L6. Gebruik actuele mediagebeurtenissen als kapstok.',
+      },
+      midden: {
+        focus: 'Maatschappelijke dimensie',
+        acties: [
+          'Gebruik deepfakes als aanleiding voor een discussie over waarheid en media.',
+          'Analyseer mediabias aan de hand van twee artikels over hetzelfde feit.',
+          'Gebruik de "Algoritmische tijdlijn"-unplugged simulatie voor filterbubbels.',
+        ],
+        vorming: 'Volg de Mediawijs-module "Media en democratie" voor gevorderde gebruikers.',
+        tijdlijn: 'Koppel mediawijsheid dit trimester aan WO en burgerschapsvorming.',
+      },
+      hoog: {
+        focus: 'Media-ethiek en debat',
+        acties: [
+          'Organiseer een gestructureerd debat over een media-ethische stelling.',
+          'Laat leerlingen een "persoonlijk media-manifest" schrijven.',
+          'Gebruik jullie mediapraktijk als voorbeeldaanpak voor het volledige schoolteam.',
+        ],
+        vorming: 'Leidt een teamgesprek over mediawijsheid in de overgang basisonderwijs-secundair.',
+        tijdlijn: 'Jouw mediapraktijk is excellent — deel en documenteer je aanpak dit schooljaar.',
+      },
+    },
+    comp: {
+      laag: {
+        focus: 'Volledig Scratch-project',
+        acties: [
+          'Plan de les "Volledig programmeerproject in Scratch" als meerwekelijks project.',
+          'Gebruik datastructuren (lijsten) om een quiz of woordenspel te bouwen.',
+          'Bespreek AI aan de hand van de Teachable Machine — concreet en verrassend.',
+        ],
+        vorming: 'Volg de Scratch-verdiepingscursus op scratch.mit.edu/educators.',
+        tijdlijn: 'Plan dit schooljaar 1 volledig Scratch-project van 3–4 weken.',
+      },
+      midden: {
+        focus: 'AI en ethiek',
+        acties: [
+          'Gebruik de les "AI en machine learning" gecombineerd met Teachable Machine.',
+          'Organiseer een technologie-ethiek-debat (les "Ethiek van technologie").',
+          'Koppel abstractie in Scratch aan de overgang naar tekst­gebaseerde programmeer­talen.',
+        ],
+        vorming: 'Verken de AI4K12-website (ai4k12.org) voor toegankelijke AI-educatie.',
+        tijdlijn: 'Combineer CT en media dit trimester: filterbubbels + AI-les als gekoppeld blok.',
+      },
+      hoog: {
+        focus: 'CT als voorbereiding op secundair',
+        acties: [
+          'Laat leerlingen reflecteren: welke CT-vaardigheden nemen ze mee naar het secundair?',
+          'Gebruik de Turing-test simulatie als afsluitende les voor Fase 4.',
+          'Documenteer jullie CT-aanpak als leidraad voor de jaarovergang.',
+        ],
+        vorming: 'Verken de brugklas-CT-aanpak in het eerste jaar secundair voor afstemming.',
+        tijdlijn: 'Jouw CT-praktijk is sterk — focus op een rijke afsluiting en verticale afstemming.',
+      },
+    },
+  },
+};
+
+function profLevel(pct) {
+  if (pct <= 35) return 'laag';
+  if (pct <= 70) return 'midden';
+  return 'hoog';
+}
+
+function doZS(fase) {
+  const questions = ZSQ[fase];
+  if (!questions) return;
+
+  const COLS = { ict: 'var(--ict)', media: 'var(--media)', comp: 'var(--comp)' };
+  const LABS = { ict: 'ICT-basisvaardigheden', media: 'Mediawijsheid', comp: 'Computationeel denken' };
+  const FASE_LABEL = { '1':'Fase 1 · Kleuters + L1', '2':'Fase 2 · L2 + L3', '3':'Fase 3 · L4 + L5', '4':'Fase 4 · L6' };
+  const tot = { ict: { s: 0, m: 0 }, media: { s: 0, m: 0 }, comp: { s: 0, m: 0 } };
+
+  ['ict', 'comp', 'media'].forEach(ll => {
+    questions[ll].forEach((v, i) => {
+      const qi = `${fase}_${ll}_${i}`;
+      const sel = document.querySelector(`[data-qi="${qi}"].s-${ll}`);
+      tot[ll].m += 3;
+      tot[ll].s += sel ? parseInt(sel.dataset.v) : 0;
+    });
+  });
+
+  const pcts = {};
+  ['ict', 'comp', 'media'].forEach(ll => {
+    pcts[ll] = tot[ll].m > 0 ? Math.round(tot[ll].s / tot[ll].m * 100) : 0;
+  });
+
+  const sorted = Object.entries(pcts).sort((a, b) => a[1] - b[1]);
+  const lowest = sorted[0];
+  const highest = sorted[sorted.length - 1];
+  const prof = ZS_PROF[fase] || {};
+
+  function scoreLabel(pct) {
+    if (pct <= 20) return { label: 'Nog te ontwikkelen', color: '#c0392b' };
+    if (pct <= 50) return { label: 'In opbouw', color: '#d67b00' };
+    if (pct <= 75) return { label: 'Groeiende praktijk', color: '#1a88c8' };
+    return { label: 'Sterke praktijk', color: '#1a6e52' };
+  }
+
+  // Build jaarplan suggestion based on scores
+  function buildJaarplanSuggestie() {
+    const maanden = ['September','Oktober','November','December','Januari','Februari','Maart','April','Mei','Juni'];
+    // Order leerlijnen: laagste score eerst (meeste aandacht), dan afwisselen
+    const llOrder = sorted.map(e => e[0]); // laagst → hoogst
+    // Spread: elke maand een leerlijn, roteer met nadruk op zwakste
+    const weights = [0,0,1,0,1,2,0,1,2,0]; // index in llOrder per maand
+    return maanden.map((m, i) => {
+      const ll = llOrder[weights[i] % llOrder.length];
+      const level = profLevel(pcts[ll]);
+      const profData = prof[ll]?.[level];
+      const suggestedLessons = LESSONS.filter(l => l && l.ll === ll && l.f === fase);
+      const lesson = suggestedLessons[Math.floor(i / 3) % suggestedLessons.length];
+      return { maand: m, ll, lesson, focus: profData?.focus || '' };
+    });
+  }
+
+  const jaarplanSuggestie = buildJaarplanSuggestie();
+
+  const res = document.getElementById('zs-res');
+  res.style.display = 'block';
+
+  // Opslaan in SharePoint
+  saveZelfscan(fase, pcts, (() => {
+    const antw = {};
+    ['ict','comp','media'].forEach(ll => {
+      questions[ll].forEach((v, i) => {
+        const qi = `${fase}_${ll}_${i}`;
+        const sel = document.querySelector(`[data-qi="${qi}"].s-${ll}`);
+        antw[qi] = sel ? parseInt(sel.dataset.v) : 0;
+      });
+    });
+    return antw;
+  })()).then(() => {
+    const savedMsg = document.getElementById('zs-saved-msg');
+    if(savedMsg) { savedMsg.style.display = ''; setTimeout(() => savedMsg.style.display = 'none', 3000); }
+  });
+
+  res.innerHTML = `
+  <!-- ── SCORE OVERZICHT ── -->
+  <div style="font-size:15px;font-weight:700;margin-bottom:.1rem;font-family:var(--font-h)">Jouw resultaat</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:1rem">${FASE_LABEL[fase]}</div>
+
+  ${['ict', 'comp', 'media'].map(ll => {
+    const pct = pcts[ll];
+    const { label, color } = scoreLabel(pct);
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <span style="font-size:12px;font-weight:700;color:${COLS[ll]}">${LABS[ll]}</span>
+        <span style="font-size:11px;font-weight:600;color:${color}">${label} · ${pct}%</span>
+      </div>
+      <div class="res-bar-w" style="height:10px">
+        <div class="res-bar" style="background:${COLS[ll]};width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('')}
+
+  <!-- ── STERK / GROEI ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:1rem 0">
+    <div style="background:#e8f5f0;border:1px solid #b6dfd0;border-radius:var(--radius-sm);padding:10px 12px">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#0f6e56;margin-bottom:3px">💪 Sterkste leerlijn</div>
+      <div style="font-size:13px;font-weight:700;color:${COLS[highest[0]]}">${LABS[highest[0]]}</div>
+      <div style="font-size:11px;color:#0f6e56;margin-top:1px">${highest[1]}%</div>
+    </div>
+    <div style="background:#fef3e8;border:1px solid #f0c98a;border-radius:var(--radius-sm);padding:10px 12px">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--comp-d);margin-bottom:3px">🌱 Grootste groeikans</div>
+      <div style="font-size:13px;font-weight:700;color:${COLS[lowest[0]]}">${LABS[lowest[0]]}</div>
+      <div style="font-size:11px;color:var(--comp-d);margin-top:1px">${lowest[1]}%</div>
+    </div>
+  </div>
+
+  <!-- ── DETAILTABEL ── -->
+  <details style="margin-bottom:1rem">
+    <summary style="font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);padding:4px 0;user-select:none">▸ Toon gedetailleerde scores per vraag</summary>
+    <table class="zs-result-table" style="margin-top:8px">
+      <tr><th>Leerlijn</th><th>Bewering</th><th>Score</th></tr>
+      ${['ict','comp','media'].map(ll =>
+        questions[ll].map((v, i) => {
+          const qi = `${fase}_${ll}_${i}`;
+          const sel = document.querySelector(`[data-qi="${qi}"].s-${ll}`);
+          const score = sel ? parseInt(sel.dataset.v) : 0;
+          const SL = ['Nog niet','Soms','Regelmatig','Altijd'];
+          const clr = score===0?'#c0392b':score===1?'#d67b00':score===2?'#1a88c8':'#1a6e52';
+          return `<tr>
+            <td><span class="tag ${ll}" style="font-size:9px">${ll.toUpperCase()}</span></td>
+            <td style="font-size:11px;line-height:1.4">${v}</td>
+            <td style="font-weight:700;color:${clr};font-size:11px;white-space:nowrap">${SL[score]}</td>
+          </tr>`;
+        }).join('')
+      ).join('')}
+    </table>
+  </details>
+
+  <!-- ══ PROFESSIONALISERINGS­VOORSTEL ══ -->
+  <div style="border:1.5px solid var(--ict);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem">
+    <div style="background:linear-gradient(135deg,var(--ict),var(--media));padding:10px 14px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:18px">🎓</span>
+      <div>
+        <div style="font-family:var(--font-h);font-size:14px;font-weight:800;color:#fff">Jouw professionaliseringsvoorstel</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.8)">Op maat van jouw zelfscan · ${FASE_LABEL[fase]}</div>
+      </div>
+    </div>
+    <div style="padding:1rem 1.25rem">
+
+    ${['ict','comp','media'].map(ll => {
+      const level = profLevel(pcts[ll]);
+      const p = prof[ll]?.[level];
+      if (!p) return '';
+      const levelLabel = level==='laag'?'Nog te ontwikkelen':level==='midden'?'In opbouw':'Al sterk';
+      const levelColor = level==='laag'?'#c0392b':level==='midden'?'#d67b00':'#1a6e52';
+      const levelBg   = level==='laag'?'#fdf0f0':level==='midden'?'#fef9ec':'#ecf7f3';
+      return `
+      <div style="margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:.65rem">
+          <span class="tag ${ll}" style="font-size:10px">${LABS[ll]}</span>
+          <span style="font-size:10px;font-weight:700;color:${levelColor};background:${levelBg};padding:2px 8px;border-radius:20px">${levelLabel}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">${pcts[ll]}%</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:.5rem">🎯 Focus: ${p.focus}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Concrete acties</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:.65rem">
+          ${p.acties.map(a => `<li style="font-size:12px;line-height:1.5;display:flex;gap:7px;align-items:flex-start">
+            <span style="color:${COLS[ll]};font-weight:700;flex-shrink:0;margin-top:1px">→</span>${a}
+          </li>`).join('')}
+        </ul>
+        <div style="background:${levelBg};border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;display:flex;gap:7px;align-items:flex-start">
+          <span style="flex-shrink:0">📚</span>
+          <span><strong>Vormingsaanbeveling:</strong> ${p.vorming}</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:flex-start">
+          <span>📅</span><span><strong>Tijdlijn:</strong> ${p.tijdlijn}</span>
+        </div>
+      </div>`;
+    }).join('')}
+
+    </div>
+  </div>
+
+  <!-- ══ JAARPLAN­SUGGESTIE ══ -->
+  <div style="border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem">
+    <div style="background:var(--bg);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">📅</span>
+        <div>
+          <div style="font-family:var(--font-h);font-size:14px;font-weight:800">Suggestie jaarplan</div>
+          <div style="font-size:11px;color:var(--muted)">Op basis van jouw zelfscan · ${FASE_LABEL[fase]}</div>
+        </div>
+      </div>
+      <button class="btn p" onclick="applyJaarplanSuggestie('${fase}')" style="font-size:11px;padding:6px 12px">
+        ✓ Overnemen in jaarplanner
+      </button>
+    </div>
+    <div style="padding:.75rem 1.25rem">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">
+        ${jaarplanSuggestie.map(({ maand, ll, lesson, focus }) => `
+          <div style="border:1px solid ${COLS[ll]}30;border-radius:var(--radius-sm);padding:8px 10px;background:${ll==='ict'?'var(--ict-l)':ll==='media'?'var(--media-l)':'var(--comp-l)'}22">
+            <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:3px">${maand}</div>
+            <div style="width:6px;height:6px;border-radius:50%;background:${COLS[ll]};display:inline-block;margin-right:4px;vertical-align:middle"></div>
+            <span style="font-size:11px;font-weight:700;color:${COLS[ll]}">${LABS[ll].split('-')[0]}</span>
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-top:3px;line-height:1.3">${lesson ? lesson.titel : '—'}</div>
+            ${lesson?.unplugged ? '<span class="up-badge" style="font-size:9px;margin-top:3px">✂ unplugged</span>' : ''}
+          </div>`).join('')}
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted);font-style:italic">
+        💡 Dit jaarplan legt meer nadruk op <strong style="color:${COLS[lowest[0]]}">${LABS[lowest[0]]}</strong> — jouw groeikans. Je kunt het aanpassen in de jaarplanner.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIEKNOPPEN ── -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn p" onclick="applyJaarplanSuggestie('${fase}')">
+      📅 Overnemen in jaarplanner
+    </button>
+    <button class="btn" onclick="filterToLLPhase('${lowest[0]}','${fase}')">
+      Toon lessen ${LABS[lowest[0]]} →
+    </button>
+    <button class="btn" onclick="printProfVoorstel('${fase}')">
+      🖨 Afdrukken als PDF
+    </button>
+  </div>`;
+}
+
+// ── Jaarplan overnemen vanuit zelfscan ──
+function applyJaarplanSuggestie(fase) {
+  // Check if jaarplanner already has content
+  const hasContent = Object.values(jpPlan).some(ids => ids.length > 0);
+  if (hasContent && !confirm('Dit overschrijft het huidige jaarplan. Doorgaan?')) return;
+
+  // Set fase and use autoGenerateJP (which respects JP_REQS and leerjaar)
+  jpFase = fase;
+  jpLeerjaar = null;
+
+  // Navigate to jaarplanner first
+  showView('jaarplanner');
+
+  setTimeout(() => {
+    // Sync fase buttons
+    document.querySelectorAll('.jp-fase-btn').forEach((b, i) => {
+      b.classList.toggle('active', String(i+1) === fase);
+    });
+    document.getElementById('jp-autogen-btn').disabled = false;
+    document.getElementById('jp-hint').style.display = 'none';
+    document.getElementById('jp-grid').style.display = 'grid';
+
+    // Hide lj-picker (no leerjaar selected from zelfscan)
+    const ljPicker = document.getElementById('jp-lj-picker');
+    if (ljPicker) ljPicker.style.display = 'none';
+
+    // Generate the plan using the full autoGenerateJP logic
+    initJPPlan();
+    autoGenerateJP();
+  }, 50);
+}
+
+// ── Afdrukken professionaliseringsvoorstel ──
+function printProfVoorstel(fase) {
+  const COLS_PRINT = { ict: '#0f5c8a', media: '#7b2d8b', comp: '#c25c0a' };
+  const LABS = { ict: 'ICT-basisvaardigheden', media: 'Mediawijsheid', comp: 'Computationeel denken' };
+  const FASE_LABEL = { '1':'Fase 1 · Kleuters + L1','2':'Fase 2 · L2 + L3','3':'Fase 3 · L4 + L5','4':'Fase 4 · L6' };
+  const questions = ZSQ[fase] || {};
+  const tot = { ict:{s:0,m:0}, media:{s:0,m:0}, comp:{s:0,m:0} };
+  const prof = ZS_PROF[fase] || {};
+
+  ['ict','comp','media'].forEach(ll => {
+    (questions[ll]||[]).forEach((v,i) => {
+      const qi = `${fase}_${ll}_${i}`;
+      const sel = document.querySelector(`[data-qi="${qi}"].s-${ll}`);
+      tot[ll].m += 3;
+      tot[ll].s += sel ? parseInt(sel.dataset.v) : 0;
+    });
+  });
+
+  const pcts = {};
+  ['ict','comp','media'].forEach(ll => { pcts[ll] = tot[ll].m>0 ? Math.round(tot[ll].s/tot[ll].m*100) : 0; });
+  const sorted = Object.entries(pcts).sort((a,b)=>a[1]-b[1]);
+  const lowest = sorted[0];
+
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
+  <title>Professionaliseringsvoorstel — DigiKompas Lonka</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:2rem;max-width:760px;margin:0 auto;color:#1a1814;font-size:13px}
+    h1{font-size:20px;margin-bottom:.25rem}
+    h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:1.5rem 0 .5rem;border-top:1px solid #eee;padding-top:.75rem}
+    h3{font-size:13px;font-weight:700;margin:.75rem 0 .3rem}
+    .tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;margin-right:4px;font-weight:700}
+    .bar-wrap{height:8px;background:#eee;border-radius:4px;overflow:hidden;margin:4px 0 8px}
+    .bar{height:100%;border-radius:4px}
+    ul{padding-left:1.25rem}li{margin-bottom:.3rem}
+    .box{background:#f5f3ef;border-radius:6px;padding:8px 10px;margin:.5rem 0;font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:.75rem 0}
+    .gcell{border:1px solid #ddd;border-radius:6px;padding:8px 10px}
+    .footer{margin-top:2rem;border-top:1px solid #ddd;padding-top:.75rem;font-size:10px;color:#aaa}
+    @media print{body{padding:.5rem}}
+  </style></head><body>
+  <h1>Professionaliseringsvoorstel</h1>
+  <p style="color:#666;font-size:12px;margin-bottom:1rem">DigiKompas Lonka · OVSG Leer Lokaal · ${FASE_LABEL[fase]}</p>
+
+  <h2>Scores zelfscan</h2>
+  ${['ict','comp','media'].map(ll=>{
+    const pct = pcts[ll];
+    const label = pct<=20?'Nog te ontwikkelen':pct<=50?'In opbouw':pct<=75?'Groeiende praktijk':'Sterke praktijk';
+    return `<div><strong style="color:${COLS_PRINT[ll]}">${LABS[ll]}</strong> — ${label} (${pct}%)<div class="bar-wrap"><div class="bar" style="background:${COLS_PRINT[ll]};width:${pct}%"></div></div></div>`;
+  }).join('')}
+
+  <p style="font-size:12px;color:#888">Groeikans: <strong style="color:${COLS_PRINT[lowest[0]]}">${LABS[lowest[0]]}</strong></p>
+
+  <h2>Professionaliseringsvoorstel per leerlijn</h2>
+  ${['ict','comp','media'].map(ll=>{
+    const level = profLevel(pcts[ll]);
+    const p = prof[ll]?.[level];
+    if(!p) return '';
+    const levelLabel = level==='laag'?'Nog te ontwikkelen':level==='midden'?'In opbouw':'Al sterk';
+    return `<h3><span class="tag" style="background:${COLS_PRINT[ll]}22;color:${COLS_PRINT[ll]}">${LABS[ll]}</span> — ${levelLabel} (${pcts[ll]}%)</h3>
+    <p><strong>Focus:</strong> ${p.focus}</p>
+    <p><strong>Concrete acties:</strong></p>
+    <ul>${p.acties.map(a=>`<li>${a}</li>`).join('')}</ul>
+    <div class="box">📚 <strong>Vorming:</strong> ${p.vorming}</div>
+    <div class="box">📅 <strong>Tijdlijn:</strong> ${p.tijdlijn}</div>`;
+  }).join('')}
+
+  <h2>Suggestie jaarplan</h2>
+  <div class="grid">
+    ${['September','Oktober','November','December','Januari','Februari','Maart','April','Mei','Juni'].map((m,i)=>{
+      const llOrd = sorted.map(e=>e[0]);
+      const weights2 = [0,0,1,0,1,2,0,1,2,0];
+      const ll = llOrd[weights2[i]%llOrd.length];
+      const available = LESSONS.filter(l=>l&&l.ll===ll&&l.f===fase);
+      const lesson = available[Math.floor(i/3)%available.length];
+      return `<div class="gcell">
+        <div style="font-size:10px;color:#888;font-weight:700">${m}</div>
+        <div style="font-size:10px;color:${COLS_PRINT[ll]};font-weight:700;margin:2px 0">${LABS[ll].split('-')[0]}</div>
+        <div style="font-size:11px">${lesson?lesson.titel:'—'}${lesson?.unplugged?' ✂':''}</div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <div class="footer">DigiKompas Lonka · OVSG Leer Lokaal · Enkel voor intern gebruik</div>
+  </body></html>`);
+  w.document.close();
+  w.print();
+}
+
+function filterToLL(ll){
+  showView('lessen');
+  aF=ll;aP='all';
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));
+  const map={all:0,ict:1,comp:2,media:3};
+  document.querySelectorAll('.fb')[map[ll]]?.classList.add('active');
+  document.querySelectorAll('.pb')[0]?.classList.add('active');
+  renderGrid();
+}
+
+function filterToLLPhase(ll, fase){
+  showView('lessen');
+  aF=ll; aP=fase;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('active'));
+  const mapLL={all:0,ict:1,comp:2,media:3};
+  const mapF={'all':0,'1':1,'2':2,'3':3,'4':4};
+  document.querySelectorAll('.fb')[mapLL[ll]]?.classList.add('active');
+  document.querySelectorAll('.pb')[mapF[fase]]?.classList.add('active');
+  renderGrid();
+}
+
+// ═══════════════════════════════════════════
+// JAARPLANNER
+// ═══════════════════════════════════════════
+
+// Minimumvereisten per fase: welke leerlijnen moeten aan bod komen
+// Structuur: per fase een array van {ll, count} — minimum aantal lessen per leerlijn per jaar
+// Minimumvereisten per fase (minimum lessen per leerlijn per jaar)
+// Gebaseerd op het aantal officiële doelen per fase uit OVSG Leer Lokaal
+const JP_REQS = {
+  // Totaal doelen per fase (som alle leerjaren) = aanbevolen lessen
+  '1': [ {ll:'ict',count:4},  {ll:'comp',count:6},  {ll:'media',count:1} ],  // K(3+4+1)+L1(1+2+0) = 11
+  '2': [ {ll:'ict',count:7},  {ll:'comp',count:7},  {ll:'media',count:3} ],  // L2(2+4+1)+L3(5+3+2) = 17
+  '3': [ {ll:'ict',count:11}, {ll:'comp',count:11}, {ll:'media',count:7} ],  // L4(7+2+5)+L5(4+9+2) = 29
+  '4': [ {ll:'ict',count:12}, {ll:'comp',count:10}, {ll:'media',count:14}],  // L6(12+10+14) = 36
+};
+
+// Leerjaar-specifieke vereisten: meer doelen in dat leerjaar = meer lessen aanbevolen
+// Gebaseerd op exacte aantallen uit Excel OVSG Leer Lokaal (DIG 1 + DIG 2 + DIG 3)
+const JP_LJ = {
+  // Reqs = 1 les per leerdoel (OVSG Leer Lokaal)
+  // Bij ≥10 doelen: evenveel lessen als doelen aanbevolen
+  '1': [
+    { lj:'K',  label:'Kleuters', doelen:{ict:3,comp:4,media:1},    reqs:[{ll:'ict',count:3},{ll:'comp',count:4},{ll:'media',count:1}] },
+    { lj:'L1', label:'L1',       doelen:{ict:1,comp:2,media:0},    reqs:[{ll:'ict',count:1},{ll:'comp',count:2},{ll:'media',count:0}] },
+  ],
+  '2': [
+    { lj:'L2', label:'L2', doelen:{ict:2,comp:4,media:1},          reqs:[{ll:'ict',count:2},{ll:'comp',count:4},{ll:'media',count:1}] },
+    { lj:'L3', label:'L3', doelen:{ict:5,comp:3,media:2},          reqs:[{ll:'ict',count:5},{ll:'comp',count:3},{ll:'media',count:2}] },
+  ],
+  '3': [
+    { lj:'L4', label:'L4', doelen:{ict:7,comp:2,media:5},          reqs:[{ll:'ict',count:7},{ll:'comp',count:2},{ll:'media',count:5}] },
+    { lj:'L5', label:'L5', doelen:{ict:4,comp:9,media:2},          reqs:[{ll:'ict',count:4},{ll:'comp',count:9},{ll:'media',count:2}] },
+  ],
+  '4': [
+    { lj:'L6', label:'L6', doelen:{ict:12,comp:10,media:14},       reqs:[{ll:'ict',count:12},{ll:'comp',count:10},{ll:'media',count:14}] },
+  ],
+};
+
+// Actief leerjaar (null = hele fase)
+let jpLeerjaar = null;
+
+// Aanbevolen spreiding: welke leerlijnen horen in welke maanden (schoolmaanden sep–jun)
+// Elke maand heeft een "thema-focus" voor afwisseling
+const JP_MONTH_FOCUS = [
+  {idx:0, name:'September',  short:'sep', focus:'ict',   icon:'💻'},
+  {idx:1, name:'Oktober',    short:'okt', focus:'media', icon:'📺'},
+  {idx:2, name:'November',   short:'nov', focus:'comp',  icon:'🤖'},
+  {idx:3, name:'December',   short:'dec', focus:'ict',   icon:'💻'},
+  {idx:4, name:'Januari',    short:'jan', focus:'media', icon:'📺'},
+  {idx:5, name:'Februari',   short:'feb', focus:'comp',  icon:'🤖'},
+  {idx:6, name:'Maart',      short:'mrt', focus:'ict',   icon:'💻'},
+  {idx:7, name:'April',      short:'apr', focus:'media', icon:'📺'},
+  {idx:8, name:'Mei',        short:'mei', focus:'comp',  icon:'🤖'},
+  {idx:9, name:'Juni',       short:'jun', focus:'ict',   icon:'💻'},
+];
+
+const LL_COLS = {ict:'var(--ict)',media:'var(--media)',comp:'var(--comp)'};
+const LL_LABELS = {ict:'ICT-basisvaardigheden',media:'Mediawijsheid',comp:'Computationeel denken'};
+const LL_LIGHT = {ict:'var(--ict-l)',media:'var(--media-l)',comp:'var(--comp-l)'};
+
+// State: jpPlan[monthIdx] = array of lesson IDs
+let jpPlan = {};
+let jpFase = null;
+let jpPickerMonth = null;
+let jpPickerFilter = 'all';
+
+// Init empty plan
+function initJPPlan() {
+  jpPlan = {};
+  JP_MONTH_FOCUS.forEach(m => { jpPlan[m.idx] = []; });
+}
+initJPPlan();
+
+function setJPFase(fase, btn) {
+  jpFase = fase;
+  jpLeerjaar = null;
+  document.querySelectorAll('.jp-fase-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('jp-autogen-btn').disabled = false;
+  document.getElementById('jp-hint').style.display = 'none';
+  document.getElementById('jp-grid').style.display = 'grid';
+  // Laad opgeslagen jaarplan uit SharePoint
+  loadJaarplan(fase).then(saved => {
+    if(saved) {
+      jpPlan = saved;
+      renderJP();
+      const indicator = document.getElementById('jp-saved-indicator');
+      if(indicator) { indicator.textContent = '✓ Jaarplan geladen'; indicator.style.opacity = '1'; setTimeout(() => indicator.style.opacity = '0', 2000); }
+    }
+  });
+
+  // Show leerjaar picker
+  const ljPicker = document.getElementById('jp-lj-picker');
+  const ljBtns = document.getElementById('jp-lj-btns');
+  const ljs = JP_LJ[fase] || [];
+  if (ljs.length > 1) {
+    ljPicker.style.display = 'block';
+    ljBtns.innerHTML = ljs.map(lj =>
+      `<button class="jp-lj-btn" onclick="setJPLeerjaar('${lj.lj}',this,'${fase}')"
+        style="padding:6px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+        background:var(--surface);font-family:var(--font-b);font-size:12px;font-weight:600;
+        color:var(--muted);cursor:pointer;transition:all .14s"
+        title="DIG 1: ${lj.doelen.ict} doelen · DIG 2: ${lj.doelen.comp} doelen · DIG 3: ${lj.doelen.media} doelen">
+        ${lj.label}
+        <span style="font-size:10px;color:var(--muted);margin-left:4px">${lj.doelen.ict+lj.doelen.comp+lj.doelen.media} doelen</span>
+      </button>`
+    ).join('');
+    document.getElementById('jp-lj-doelen-info').style.display = 'none';
+  } else if (ljs.length === 1) {
+    // Only 1 leerjaar (L6): auto-select and show info
+    ljPicker.style.display = 'block';
+    ljBtns.innerHTML = '';
+    const lj = ljs[0];
+    jpLeerjaar = lj.lj;
+    showLJInfo(lj, fase);
+  } else {
+    ljPicker.style.display = 'none';
+  }
+
+  renderJPSummary();
+  renderJPGrid();
+}
+
+function setJPLeerjaar(lj, btn, fase) {
+  jpLeerjaar = lj;
+  document.querySelectorAll('.jp-lj-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--surface)';
+    b.style.color = 'var(--muted)';
+  });
+  btn.style.borderColor = 'var(--ict)';
+  btn.style.background = 'var(--ict-l)';
+  btn.style.color = 'var(--ict)';
+  const ljData = (JP_LJ[fase] || []).find(l => l.lj === lj);
+  if (ljData) showLJInfo(ljData, fase);
+  renderJPSummary();
+}
+
+function showLJInfo(lj, fase) {
+  const info = document.getElementById('jp-lj-doelen-info');
+  if (!info) return;
+  const total = lj.doelen.ict + lj.doelen.comp + lj.doelen.media;
+  info.style.display = 'block';
+  info.innerHTML = `📊 <strong>${lj.label}</strong> heeft <strong>${total} officiële OVSG-doelen</strong> dit schooljaar:
+    <span style="color:var(--ict);font-weight:700">ICT: ${lj.doelen.ict}</span> ·
+    <span style="color:var(--comp);font-weight:700">CT: ${lj.doelen.comp}</span> ·
+    <span style="color:var(--media);font-weight:700">Media: ${lj.doelen.media}</span>
+    — Het aanbevolen minimum lessen is aangepast aan dit leerjaar.`;
+}
+
+function renderJP() {
+  // Re-render preserving state
+  if (jpFase) {
+    document.getElementById('jp-hint').style.display = 'none';
+    document.getElementById('jp-grid').style.display = 'grid';
+    document.getElementById('jp-autogen-btn').disabled = false;
+    // Restore active fase button
+    document.querySelectorAll('.jp-fase-btn').forEach((b,i) => {
+      b.classList.toggle('active', String(i+1) === jpFase);
+    });
+    renderJPSummary();
+    renderJPGrid();
+  } else {
+    document.getElementById('jp-hint').style.display = 'block';
+    document.getElementById('jp-grid').style.display = 'none';
+    document.getElementById('jp-summary-bar').innerHTML = '';
+  }
+}
+
+// ── SUMMARY BAR ──
+function renderJPSummary() {
+  if (!jpFase) return;
+  // Use leerjaar-specific reqs if a leerjaar is selected, otherwise fase reqs
+  let reqs = JP_REQS[jpFase] || [];
+  let ljLabel = '';
+  if (jpLeerjaar) {
+    const ljData = (JP_LJ[jpFase] || []).find(l => l.lj === jpLeerjaar);
+    if (ljData) { reqs = ljData.reqs; ljLabel = ` · ${ljData.label}`; }
+  }
+  const counts = {ict:0, media:0, comp:0};
+  Object.values(jpPlan).forEach(ids => {
+    ids.forEach(id => {
+      const l = LESSONS.find(x => x.id === id);
+      if (l) counts[l.ll]++;
+    });
+  });
+  const totalPlanned = counts.ict + counts.media + counts.comp;
+  const totalRequired = reqs.reduce((s,r) => s+r.count, 0);
+  const pct = Math.min(100, Math.round(totalPlanned / totalRequired * 100));
+
+  const allMet = reqs.every(r => counts[r.ll] >= r.count);
+  const monthsWithLesson = Object.values(jpPlan).filter(ids => ids.length > 0).length;
+
+  document.getElementById('jp-summary-bar').innerHTML = `
+  <div class="jp-summary" style="margin-bottom:1rem">
+    <div class="jp-stat">
+      <div class="jp-stat-n ${totalPlanned >= totalRequired ? 'good' : 'warn'}">${totalPlanned}</div>
+      <div class="jp-stat-l">geplande lessen</div>
+    </div>
+    <div class="jp-stat">
+      <div class="jp-stat-n" style="color:var(--muted)">${totalRequired}</div>
+      <div class="jp-stat-l">minimum${ljLabel}</div>
+    </div>
+    <div class="jp-stat">
+      <div class="jp-stat-n ${monthsWithLesson >= 8 ? 'good' : 'warn'}">${monthsWithLesson}/10</div>
+      <div class="jp-stat-l">maanden ingevuld</div>
+    </div>
+    <div class="jp-progress">
+      <div class="jp-progress-label">
+        <span>Voortgang t.o.v. minimum${ljLabel}</span>
+        <span style="color:${allMet?'#1a6e52':'var(--comp-m)'}">${allMet ? '✓ Voldaan' : pct+'%'}</span>
+      </div>
+      <div class="jp-bar-w"><div class="jp-bar" style="width:${pct}%;background:${allMet?'#1a9e6e':'linear-gradient(90deg,var(--ict),var(--media))'}"></div></div>
+      <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap">
+        ${reqs.map(r => {
+          const met = counts[r.ll] >= r.count;
+          return `<span style="font-size:10px;font-weight:600;color:${met?'#1a6e52':LL_COLS[r.ll]}">
+            ${met?'✓':counts[r.ll]+'/'+r.count} ${r.ll.toUpperCase()}
+          </span>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── MONTH GRID ──
+function renderJPGrid() {
+  if (!jpFase) return;
+  const grid = document.getElementById('jp-grid');
+  grid.innerHTML = JP_MONTH_FOCUS.map(m => {
+    const ids = jpPlan[m.idx] || [];
+    const lessons = ids.map(id => LESSONS.find(x => x.id === id)).filter(Boolean);
+    const llInMonth = [...new Set(lessons.map(l => l.ll))];
+
+    return `<div class="jp-month">
+      <div class="jp-month-hdr">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:16px">${m.icon}</span>
+          <div>
+            <div class="jp-month-name">${m.name}</div>
+            <div class="jp-month-meta">Focus: ${LL_LABELS[m.focus]}</div>
+          </div>
+        </div>
+        <div class="jp-month-dots">
+          ${['ict','comp','media'].map(ll => `<span class="jp-dot ${llInMonth.includes(ll)?'filled-'+ll:''}" title="${LL_LABELS[ll]}"></span>`).join('')}
+        </div>
+      </div>
+
+      ${lessons.length === 0
+        ? `<div class="jp-slot"><div class="jp-slot-body"><div class="jp-slot-empty">Nog geen les gepland</div></div></div>`
+        : lessons.map((l,li) => `
+          <div class="jp-slot">
+            <div class="jp-slot-num">${li+1}</div>
+            <div class="jp-slot-body">
+              <div class="jp-pick">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                  <span style="width:8px;height:8px;border-radius:50%;background:${LL_COLS[l.ll]};flex-shrink:0"></span>
+                  <span class="jp-pick-title">${l.titel}</span>
+                  ${l.unplugged ? '<span class="up-badge" style="font-size:9px;padding:1px 5px">✂ unplugged</span>' : ''}
+                </div>
+                <div class="jp-pick-meta">
+                  <span style="font-size:10px;font-weight:600;color:${LL_COLS[l.ll]}">${LL_LABELS[l.ll]}</span>
+                  <span style="color:var(--border2)">·</span>
+                  <span>${l.duur}</span>
+                  <span style="color:var(--border2)">·</span>
+                  <span>Fase ${l.f}</span>
+                </div>
+                <div class="jp-pick-actions">
+                  <button class="jp-btn-sm" onclick="openLessonFromJP(${l.id})">↗ Bekijken</button>
+                  <button class="jp-btn-sm remove" onclick="removeFromJP(${m.idx},${l.id})">✕ Verwijder</button>
+                </div>
+              </div>
+            </div>
+          </div>`).join('')
+      }
+
+      <div style="padding:8px 14px 10px">
+        <button class="jp-add-btn" onclick="openPicker(${m.idx})">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Voeg les toe
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADD / REMOVE ──
+function addToJP(monthIdx, lessonId) {
+  if (!jpPlan[monthIdx]) jpPlan[monthIdx] = [];
+  if (!jpPlan[monthIdx].includes(lessonId)) {
+    jpPlan[monthIdx].push(lessonId);
+    autoSaveJaarplan();
+  }
+  closePicker();
+  renderJPSummary();
+  renderJPGrid();
+}
+
+function removeFromJP(monthIdx, lessonId) {
+  jpPlan[monthIdx] = (jpPlan[monthIdx] || []).filter(id => id !== lessonId);
+  renderJPSummary();
+  autoSaveJaarplan();
+  renderJPGrid();
+}
+
+function openLessonFromJP(id) {
+  showView('lessen');
+  openLesson(id);
+}
+
+// ── CLEAR ──
+function clearJP() {
+  if (!confirm('Ben je zeker dat je het volledige jaarplan wil leegmaken?')) return;
+  initJPPlan();
+  renderJPSummary();
+  renderJPGrid();
+}
+
+// ── AUTO-GENEREER ──
+function autoGenerateJP() {
+  if (!jpFase) { alert('Kies eerst een fase.'); return; }
+  const fase = jpFase;
+
+  // Haal de actieve vereisten op (leerjaar-specifiek als geselecteerd, anders fase)
+  let reqs = JP_REQS[fase] || [];
+  let ljLabel = '';
+  if (jpLeerjaar) {
+    const ljData = (JP_LJ[fase] || []).find(l => l.lj === jpLeerjaar);
+    if (ljData) { reqs = ljData.reqs; ljLabel = ljData.label; }
+  }
+
+  const hasContent = Object.values(jpPlan).some(ids => ids.length > 0);
+  if (hasContent && !confirm('Dit overschrijft het huidige jaarplan. Doorgaan?')) return;
+
+  initJPPlan();
+
+  // ── Totaal te plannen lessen ──
+  const totalLessen = reqs.reduce((s, r) => s + r.count, 0);
+  const maanden = JP_MONTH_FOCUS.length; // 10
+
+  // ── Bouw pool per leerlijn: fase-lessen, afwisselend unplugged/plugged ──
+  const buildPool = (ll) => {
+    const plugged   = LESSONS.filter(l => l.ll === ll && l.f === fase && !l.unplugged);
+    const unplugged = LESSONS.filter(l => l.ll === ll && l.f === fase &&  l.unplugged);
+    const out = [];
+    const len = Math.max(plugged.length, unplugged.length);
+    for (let i = 0; i < len; i++) {
+      if (i < plugged.length)   out.push(plugged[i]);
+      if (i < unplugged.length) out.push(unplugged[i]);
+    }
+    return out;
+  };
+
+  const pools = { ict: buildPool('ict'), comp: buildPool('comp'), media: buildPool('media') };
+  const used = new Set();
+  const take = (ll) => {
+    const l = pools[ll].find(x => !used.has(x.id));
+    if (l) { used.add(l.id); return l; }
+    return null;
+  };
+
+  // ── Spreiding berekenen ──
+  // Maak een interleaved rij van alle te plannen lessen (leerlijn-volgorde afwisselend)
+  const maxCount = Math.max(...reqs.map(r => r.count));
+  const llOrder = [];
+  for (let round = 0; round < maxCount; round++) {
+    reqs.forEach(r => { if (round < r.count) llOrder.push(r.ll); });
+  }
+  // llOrder.length === totalLessen
+
+  // ── Bereken lessen per maand ──
+  // Als totalLessen <= 10: elke maand 0 of 1 les (sommige maanden leeg)
+  // Als totalLessen > 10:  verdeel zo gelijkmatig mogelijk
+  //   basis = floor(total / 10), overschot = total % 10
+  //   eerste `overschot` maanden krijgen basis+1, rest basis
+  const basis = Math.floor(totalLessen / maanden);
+  const extra = totalLessen % maanden;
+
+  // Verdeel maanden: eerst de "zwaardere" maanden (focus-leerlijn als gids)
+  // Geef de maanden met de juiste focus van een leerlijn die meer doelen heeft de extra lessen
+  const maandPlan = JP_MONTH_FOCUS.map((m, i) => ({
+    idx: m.idx,
+    focus: m.focus,
+    count: basis + (i < extra ? 1 : 0)
+  }));
+
+  // ── Wijs lessen toe ──
+  let lessonQueue = llOrder.slice(); // kopie van de te plannen lessen
+  let planned = 0;
+  maandPlan.forEach(m => {
+    for (let slot = 0; slot < m.count; slot++) {
+      const ll = lessonQueue.shift();
+      if (ll === undefined) break;
+      const lesson = take(ll);
+      if (lesson) { jpPlan[m.idx].push(lesson.id); planned++; }
+    }
+  });
+
+  // ── Zorg dat elke maand minstens 1 les heeft (alleen als totalLessen >= 10) ──
+  if (totalLessen >= maanden) {
+    JP_MONTH_FOCUS.forEach(m => {
+      if (jpPlan[m.idx].length === 0) {
+        for (const ll of ['ict', 'comp', 'media']) {
+          const l = take(ll);
+          if (l) { jpPlan[m.idx].push(l.id); break; }
+        }
+      }
+    });
+  }
+
+  // ── Feedback ──
+  const btn = document.getElementById('jp-autogen-btn');
+  const orig = btn.innerHTML;
+  const available = Object.values(pools).flat().length + planned; // orig pool size approx
+  const tekortStr = planned < totalLessen
+    ? ` ⚠ ${totalLessen - planned} lessen ontbreken (onvoldoende lesmateriaal voor dit leerjaar in het platform)`
+    : '';
+  const lsPerMaand = totalLessen <= maanden
+    ? `${planned} lessen over ${planned} maanden`
+    : `${planned} lessen — ${basis}–${basis+1} per maand`;
+  btn.innerHTML = `✓ Gegenereerd! (${lsPerMaand})`;
+  btn.style.background = tekortStr
+    ? 'linear-gradient(135deg,#d67b00,#9e6e00)'
+    : 'linear-gradient(135deg,#1a9e6e,#1a6e9e)';
+  setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 4000);
+
+  // Toon waarschuwing als pool onvoldoende was
+  if (tekortStr) {
+    const warn = document.getElementById('jp-summary-bar');
+    if (warn) {
+      setTimeout(() => {
+        warn.insertAdjacentHTML('afterbegin',
+          `<div style="background:#fef3e8;border:1.5px solid #f0c98a;border-radius:var(--radius-sm);
+            padding:8px 12px;margin-bottom:8px;font-size:12px;color:#7c4206;display:flex;gap:8px;align-items:flex-start">
+            <span>⚠</span>
+            <span><strong>${totalLessen - planned} lessen konden niet ingepland worden</strong> — het platform heeft voor dit leerjaar (${ljLabel || 'Fase '+fase})
+            slechts ${planned} lessen beschikbaar van de ${totalLessen} aanbevolen.
+            Voeg handmatig extra lessen toe via "+ Voeg les toe".</span>
+          </div>`
+        );
+      }, 100);
+    }
+  }
+
+  renderJPSummary();
+  renderJPGrid();
+}
+
+// ── PICKER MODAL ──
+function openPicker(monthIdx) {
+  jpPickerMonth = monthIdx;
+  jpPickerFilter = 'all';
+  const m = JP_MONTH_FOCUS[monthIdx];
+  const faseLbl = {'1':'Kleuters + L1','2':'L2 + L3','3':'L4 + L5','4':'L6'}[jpFase] || '';
+  document.getElementById('jp-picker-title').textContent =
+    `Les kiezen voor ${m.name} — Fase ${jpFase} (${faseLbl})`;
+  document.getElementById('jp-picker-srch').value = '';
+  // Reset filter knoppen
+  document.querySelectorAll('.jp-pf-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === 'all');
+  });
+  document.getElementById('jp-picker').classList.add('open');
+  renderPickerList();
+}
+
+function closePicker() {
+  document.getElementById('jp-picker').classList.remove('open');
+  jpPickerMonth = null;
+}
+
+function setPickerFilter(f, btn) {
+  jpPickerFilter = f;
+  document.querySelectorAll('.jp-pf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPickerList();
+}
+
+function renderPickerList() {
+  const q = (document.getElementById('jp-picker-srch')?.value || '').toLowerCase();
+  const fase = jpFase;
+  const alreadyPlanned = Object.values(jpPlan).flat();
+
+  // Basis: altijd enkel lessen van de geselecteerde fase
+  let list = LESSONS.filter(l => l.f === fase);
+
+  // Leerlijn- of unplugged-filter bovenop
+  if (jpPickerFilter === 'unplugged') {
+    list = list.filter(l => l.unplugged);
+  } else if (jpPickerFilter !== 'all') {
+    list = list.filter(l => l.ll === jpPickerFilter);
+  }
+
+  // Zoekfilter
+  if (q) {
+    list = list.filter(l =>
+      l.titel.toLowerCase().includes(q) ||
+      LL_LABELS[l.ll].toLowerCase().includes(q) ||
+      l.doel.toLowerCase().includes(q)
+    );
+  }
+
+  // Sorteer: niet-geplande eerst, dan alfabetisch per leerlijn
+  list.sort((a, b) => {
+    const aPlanned = alreadyPlanned.includes(a.id) ? 1 : 0;
+    const bPlanned = alreadyPlanned.includes(b.id) ? 1 : 0;
+    if (aPlanned !== bPlanned) return aPlanned - bPlanned;
+    const llOrder = {ict: 0, media: 1, comp: 2};
+    if (a.ll !== b.ll) return llOrder[a.ll] - llOrder[b.ll];
+    return a.titel.localeCompare(b.titel);
+  });
+
+  const container = document.getElementById('jp-picker-list');
+
+  if (!list.length) {
+    container.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--muted);font-size:13px">
+      Geen lessen gevonden voor Fase ${fase}${jpPickerFilter !== 'all' ? ' · filter: '+jpPickerFilter : ''}.
+    </div>`;
+    return;
+  }
+
+  // Groepeer per leerlijn voor overzicht
+  const grouped = {ict: [], media: [], comp: []};
+  list.forEach(l => grouped[l.ll].push(l));
+
+  let html = '';
+  ['ict', 'comp', 'media'].forEach(ll => {
+    if (grouped[ll].length === 0) return;
+    html += `<div style="padding:7px 1.25rem 3px;background:${LL_LIGHT[ll]};border-bottom:1px solid var(--border)">
+      <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:${LL_COLS[ll]}">${LL_LABELS[ll]}</span>
+    </div>`;
+    grouped[ll].forEach(l => {
+      const planned = alreadyPlanned.includes(l.id);
+      html += `<div class="jp-picker-item" onclick="${planned ? '' : 'addToJP('+jpPickerMonth+','+l.id+')'}"
+        style="${planned ? 'opacity:.45;cursor:default;' : 'cursor:pointer;'}">
+        <span style="width:10px;height:10px;border-radius:50%;background:${LL_COLS[l.ll]};flex-shrink:0"></span>
+        <div style="flex:1;min-width:0">
+          <div class="jp-pi-title">${l.titel}${l.unplugged ? ' <span class="up-badge" style="font-size:9px;padding:1px 5px">✂ unplugged</span>' : ''}</div>
+          <div class="jp-pi-meta">${l.duur}${planned ? ' · <strong style="color:#c0392b">Al gepland</strong>' : ''}</div>
+        </div>
+        ${!planned ? '<span style="font-size:11px;font-weight:700;color:var(--ict);white-space:nowrap;flex-shrink:0">+ Voeg toe</span>' : ''}
+      </div>`;
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+// Close picker on backdrop click
+document.getElementById('jp-picker').addEventListener('click', function(e) {
+  if (e.target === this) closePicker();
+});
+
+// ── PRINT ──
+function printJP() {
+  if (!jpFase) { alert('Kies eerst een fase.'); return; }
+  const FASE_LABELS = {'1':'Fase 1 · Kleuters + L1','2':'Fase 2 · L2 + L3','3':'Fase 3 · L4 + L5','4':'Fase 4 · L6'};
+  const w = window.open('', '_blank');
+  const rows = JP_MONTH_FOCUS.map(m => {
+    const ids = jpPlan[m.idx] || [];
+    const lessons = ids.map(id => LESSONS.find(x => x.id === id)).filter(Boolean);
+    return `<tr>
+      <td style="font-weight:700;white-space:nowrap;padding:8px 10px;border:1px solid #ddd;background:#f8f8f5">${m.icon} ${m.name}</td>
+      <td style="padding:8px 10px;border:1px solid #ddd">${lessons.length === 0
+        ? '<em style="color:#aaa">—</em>'
+        : lessons.map(l => `<div style="margin-bottom:4px"><strong>${l.titel}</strong> <span style="font-size:11px;color:#888">(${LL_LABELS[l.ll]} · ${l.duur}${l.unplugged?' · ✂ unplugged':''})</span></div>`).join('')
+      }</td>
+    </tr>`;
+  }).join('');
+
+  const counts = {ict:0,media:0,comp:0};
+  Object.values(jpPlan).flat().forEach(id => { const l=LESSONS.find(x=>x.id===id); if(l) counts[l.ll]++; });
+  const reqs = JP_REQS[jpFase];
+
+  w.document.write(`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
+  <title>Jaarplan DigiKompas Lonka · ${FASE_LABELS[jpFase]}</title>
+  <style>body{font-family:Arial,sans-serif;padding:2rem;max-width:800px;margin:0 auto;color:#18160f}
+  h1{font-size:20px;margin-bottom:.25rem}h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:#888;margin:1.25rem 0 .5rem}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  .summary{display:flex;gap:1.5rem;background:#f5f3ef;padding:10px 14px;border-radius:8px;margin-bottom:1.25rem}
+  .stat{text-align:center}.stat-n{font-size:20px;font-weight:800}.stat-l{font-size:10px;color:#888}
+  .footer{margin-top:2rem;border-top:1px solid #ddd;padding-top:.75rem;font-size:10px;color:#aaa}
+  @media print{body{padding:.5rem}}</style>
+  </head><body>
+  <h1>Jaarplan DigiKompas Lonka</h1>
+  <p style="font-size:13px;color:#666;margin-bottom:1rem">${FASE_LABELS[jpFase]}</p>
+  <div class="summary">
+    ${reqs.map(r => '<div class="stat"><div class="stat-n" style="color:'+(counts[r.ll]>=r.count?'#1a6e52':'#c25c0a')+'">'+counts[r.ll]+'/'+r.count+'</div><div class="stat-l">'+r.ll.toUpperCase()+'</div></div>').join('')}
+  </div>
+  <h2>Maandoverzicht</h2>
+  <table><tr><th style="text-align:left;padding:8px 10px;background:#eee;border:1px solid #ddd">Maand</th>
+  <th style="text-align:left;padding:8px 10px;background:#eee;border:1px solid #ddd">Geplande les(sen)</th></tr>
+  ${rows}</table>
+  <div class="footer">DigiKompas Lonka · OVSG Leer Lokaal · Enkel voor intern gebruik</div>
+  </body></html>`);
+  w.document.close();
+  w.print();
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// LESREFLECTIE FUNCTIES
+// ═══════════════════════════════════════════════════════════
+let rfStar = 0;
+let rfLesId = null;
+
+function setRfStar(n) {
+  rfStar = n;
+  for(let i = 1; i <= 5; i++) {
+    const btn = document.getElementById('rf-star-' + i);
+    if(btn) btn.style.opacity = i <= n ? '1' : '.3';
+  }
+}
+
+async function loadReflectiesTab(lesId) {
+  rfLesId = lesId;
+  rfStar = 0;
+  // Reset form
+  ['rf-sterktes','rf-verbeterpunten','rf-tips'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  for(let i = 1; i <= 5; i++) {
+    const btn = document.getElementById('rf-star-' + i);
+    if(btn) btn.style.opacity = '.3';
+  }
+  const el = document.getElementById('rf-saved');
+  if(el) el.style.display = 'none';
+
+  // Laad reflecties
+  const lijst = document.getElementById('reflecties-lijst');
+  if(!lijst) return;
+  lijst.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:20px;">Laden...</div>';
+
+  const reflecties = await loadReflecties(lesId);
+  if(!reflecties.length) {
+    lijst.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:20px;">Nog geen reflecties voor deze les. Wees de eerste!</div>';
+    return;
+  }
+
+  lijst.innerHTML = reflecties.map(r => {
+    const sterren = '★'.repeat(r.beoordeling || 0) + '☆'.repeat(5 - (r.beoordeling || 0));
+    const naam = r.isOwn ? 'Jouw reflectie' : (r.anoniem ? 'Anonieme collega' : r.email);
+    const datum = r.datum ? new Date(r.datum).toLocaleDateString('nl-BE') : '';
+    const kleur = r.isOwn ? '#e8f5ee' : '#f5f7fa';
+    const border = r.isOwn ? '1.5px solid #2E8B57' : '1px solid #DDE3EC';
+    return `<div style="background:${kleur};border:${border};border-radius:10px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:.78rem;font-weight:700;color:#1C2B3A;">${naam}</span>
+        <span style="font-size:.75rem;color:var(--muted);">${sterren} · ${datum}</span>
+      </div>
+      ${r.sterktes ? `<div style="margin-bottom:8px;"><span style="font-size:.72rem;font-weight:700;color:#2E8B57;text-transform:uppercase;letter-spacing:.04em;">✓ Sterk</span><p style="font-size:.82rem;margin:3px 0 0;line-height:1.4;">${r.sterktes}</p></div>` : ''}
+      ${r.verbeterpunten ? `<div style="margin-bottom:8px;"><span style="font-size:.72rem;font-weight:700;color:#d67b00;text-transform:uppercase;letter-spacing:.04em;">△ Beter</span><p style="font-size:.82rem;margin:3px 0 0;line-height:1.4;">${r.verbeterpunten}</p></div>` : ''}
+      ${r.tips ? `<div><span style="font-size:.72rem;font-weight:700;color:#1A6BB5;text-transform:uppercase;letter-spacing:.04em;">💡 Tips</span><p style="font-size:.82rem;margin:3px 0 0;line-height:1.4;">${r.tips}</p></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function submitReflectie() {
+  if(!rfLesId) return;
+  const sterktes = document.getElementById('rf-sterktes')?.value.trim() || '';
+  const verbeterpunten = document.getElementById('rf-verbeterpunten')?.value.trim() || '';
+  const tips = document.getElementById('rf-tips')?.value.trim() || '';
+  const anoniem = document.getElementById('rf-anoniem')?.checked !== false;
+
+  if(!sterktes && !verbeterpunten && !tips) { alert('Vul minstens één veld in.'); return; }
+
+  const les = LESSONS.find(l => l && l.id === rfLesId);
+  if(!les) return;
+
+  await saveReflectie(les, sterktes, verbeterpunten, tips, rfStar, anoniem);
+
+  const saved = document.getElementById('rf-saved');
+  if(saved) { saved.style.display = ''; setTimeout(() => saved.style.display = 'none', 3000); }
+
+  // Herlaad reflecties
+  await loadReflectiesTab(rfLesId);
+}
+
+// ── Jaarplan auto-save ─────────────────────────────────────
+let jpSaveTimer = null;
+function autoSaveJaarplan() {
+  clearTimeout(jpSaveTimer);
+  jpSaveTimer = setTimeout(async () => {
+    if(!dkToken || !jpFase) return;
+    await saveJaarplan(jpFase, jpLJ, jpPlan);
+    const indicator = document.getElementById('jp-saved-indicator');
+    if(indicator) {
+      indicator.textContent = '✓ Opgeslagen';
+      indicator.style.opacity = '1';
+      setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+    }
+  }, 1500);
+}
+
+async function loadJaarplanFromSP() {
+  if(!dkToken || !jpFase) return;
+  const saved = await loadJaarplan(jpFase);
+  if(saved) {
+    jpPlan = saved;
+    renderJP();
+  }
+}
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+dkInit().then(() => {
+  updateCounts();
+  renderGrid();
+  showView('zelfscan');
+});
+
+
+
+function closeHelp(){
+  document.getElementById('helpOverlay').classList.remove('on');
+  document.getElementById('helpDrawer').classList.remove('on');
+  document.body.style.overflow='';
+}
+function showHelpTab(id,btn){
+  document.querySelectorAll('.help-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.help-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('help-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHelp();});
+
+
+window.addEventListener('message', function(event) {
+  if (event.origin !== 'https://lon-ka.github.io') return;
+  if (event.data && event.data.type === 'OPEN_HELP') openHelp();
+});
+</script>
+</body>
+
+</script>
+
 <!-- HELP DRAWER -->
 <div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
 <div class="help-drawer" id="helpDrawer">
