@@ -862,6 +862,10 @@ if (window.self === window.top) {
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
       <label style="font-size:.82rem;font-weight:600;color:var(--muted);">Schooljaar:</label>
       <select id="team-sj-select" onchange="renderTeamOverzicht()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;"></select>
+      <label style="font-size:.82rem;font-weight:600;color:var(--muted);margin-left:8px;">Leerkracht:</label>
+      <select id="team-docent-select" onchange="renderTeamOverzicht()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;max-width:260px;">
+        <option value="">Alle leerkrachten</option>
+      </select>
     </div>
     <div id="team-content"></div>
   </div>
@@ -3887,7 +3891,8 @@ async function loadBeschikbareSchooljaren(){
 async function renderTeamOverzicht(){
   const cont = document.getElementById('team-content');
   const sel  = document.getElementById('team-sj-select');
-  if(!cont || !sel) return;
+  const docentSel = document.getElementById('team-docent-select');
+  if(!cont || !sel || !docentSel) return;
 
   if(!sel.options.length){
     const jaren = await loadBeschikbareSchooljaren();
@@ -3901,10 +3906,18 @@ async function renderTeamOverzicht(){
   }
 
   cont.innerHTML = `<div class="empty"><p>Bezig met laden…</p></div>`;
-  const rows = await loadTeamGegevenLessen(schoolJaar);
+  const alleRows = await loadTeamGegevenLessen(schoolJaar);
+
+  // Leerkracht-dropdown vullen op basis van dit schooljaar, met behoud van huidige keuze indien nog geldig
+  const huidigeDocentKeuze = docentSel.value;
+  const docenten = [...new Set(alleRows.map(r => r.email))].sort();
+  docentSel.innerHTML = `<option value="">Alle leerkrachten</option>` + docenten.map(e => `<option value="${e}">${e}</option>`).join('');
+  docentSel.value = docenten.includes(huidigeDocentKeuze) ? huidigeDocentKeuze : '';
+
+  const rows = docentSel.value ? alleRows.filter(r => r.email === docentSel.value) : alleRows;
 
   if(!rows.length){
-    cont.innerHTML = `<div class="empty"><p>Nog geen lessen gemarkeerd als "gegeven" voor schooljaar ${schoolJaar}.</p></div>`;
+    cont.innerHTML = `<div class="empty"><p>${docentSel.value ? `Geen lessen gevonden voor ${docentSel.value} in schooljaar ${schoolJaar}.` : `Nog geen lessen gemarkeerd als "gegeven" voor schooljaar ${schoolJaar}.`}</p></div>`;
     return;
   }
 
