@@ -3211,33 +3211,45 @@ var dkEmail = '';
 
 // ── GRAPH HELPERS ────────────────────────────────────────────
 async function dkGet(url) {
-  if(!dkToken) return null;
+  if(!dkToken) { console.warn('DigiKompas: dkGet zonder token —', url); return null; }
   const r = await fetch('https://graph.microsoft.com/v1.0' + url, {
     headers: { Authorization: 'Bearer ' + dkToken }
   });
-  if(!r.ok) return null;
+  if(!r.ok) {
+    const body = await r.text().catch(()=> '');
+    console.error('DigiKompas: dkGet mislukt (' + r.status + ')', url, body);
+    return null;
+  }
   return r.json();
 }
 
 async function dkPost(url, body) {
-  if(!dkToken) return null;
+  if(!dkToken) { console.warn('DigiKompas: dkPost zonder token —', url); return null; }
   const r = await fetch('https://graph.microsoft.com/v1.0' + url, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + dkToken, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if(!r.ok) return null;
+  if(!r.ok) {
+    const errBody = await r.text().catch(()=> '');
+    console.error('DigiKompas: dkPost mislukt (' + r.status + ')', url, errBody);
+    return null;
+  }
   return r.json();
 }
 
 async function dkPatch(url, body) {
-  if(!dkToken) return null;
+  if(!dkToken) { console.warn('DigiKompas: dkPatch zonder token —', url); return null; }
   const r = await fetch('https://graph.microsoft.com/v1.0' + url, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + dkToken, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if(!r.ok) return null;
+  if(!r.ok) {
+    const errBody = await r.text().catch(()=> '');
+    console.error('DigiKompas: dkPatch mislukt (' + r.status + ')', url, errBody);
+    return null;
+  }
   return r.json();
 }
 
@@ -3345,9 +3357,9 @@ let lesGegevenEigen = new Map();
 let lesGegevenGeladen = false;
 
 async function markLesGegeven(les, bron) {
-  if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) return false;
+  if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { console.warn('DigiKompas: kan les niet als gegeven markeren — geen login of geen lesgegeven-lijst gekoppeld.'); return false; }
   const schoolJaar = getSchoolJaar();
-  await dkPost(spUrl(CFG.lijsten.lesgegeven), {
+  const result = await dkPost(spUrl(CFG.lijsten.lesgegeven), {
     fields: {
       Title:      dkEmail + ' - ' + les.titel + ' - ' + schoolJaar,
       Email:      dkEmail,
@@ -3360,6 +3372,10 @@ async function markLesGegeven(les, bron) {
       Bron:       bron || 'handmatig', // 'handmatig' of 'jaarplanner'
     }
   });
+  if(!result) {
+    alert('Kon niet opslaan naar SharePoint. Open de browserconsole (F12) voor het foutdetail, of probeer later opnieuw.');
+    return false;
+  }
   if(!lesGegevenEigen.has(les.id)) lesGegevenEigen.set(les.id, []);
   lesGegevenEigen.get(les.id).push({ schoolJaar, datum: new Date().toISOString(), bron: bron || 'handmatig' });
   return true;
