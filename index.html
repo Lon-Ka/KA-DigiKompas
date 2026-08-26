@@ -3302,7 +3302,7 @@ async function saveJaarplan(fase, leerjaar, plan) {
 
 async function loadJaarplan(fase) {
   if(!dkToken || !dkEmail) return null;
-  const data = await dkGet(spUrl(CFG.lijsten.jaarplan) + '?$filter=fields/Email eq \'' + dkEmail + '\' and fields/Fase eq \'' + fase + '\'&$select=fields');
+  const data = await dkGet(spUrl(CFG.lijsten.jaarplan) + '?$filter=fields/Email eq \'' + dkEmail + '\' and fields/Fase eq \'' + fase + '\'&$expand=fields');
   if(data && data.value && data.value.length > 0) {
     try { return JSON.parse(data.value[0].fields.Plan); } catch(e) { return null; }
   }
@@ -3331,9 +3331,9 @@ async function saveReflectie(les, sterktes, verbeterpunten, tips, beoordeling, a
 
 async function loadReflecties(lesId) {
   if(!dkToken) return [];
-  const data = await dkGet(spUrl(CFG.lijsten.lesreflectie) + '?$filter=fields/LesID eq ' + lesId + '&$select=fields&$top=50');
+  const data = await dkGet(spUrl(CFG.lijsten.lesreflectie) + '?$filter=fields/LesID eq ' + lesId + '&$expand=fields&$top=50');
   if(!data || !data.value) return [];
-  return data.value.map(item => ({
+  return data.value.filter(item => item.fields).map(item => ({
     email:          item.fields.Email,
     datum:          item.fields.Datum,
     sterktes:       item.fields.Sterktes || '',
@@ -3404,11 +3404,12 @@ async function unmarkLesGegeven(lesId) {
 // Laadt alle eigen 'gegeven'-lessen (huidig + vorig schooljaar) — 1x aangeroepen bij opstart.
 async function loadEigenGegevenLessen() {
   if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { lesGegevenGeladen = true; return; }
-  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$filter=fields/Email eq \'' + dkEmail + '\'&$select=fields&$top=500');
+  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$filter=fields/Email eq \'' + dkEmail + '\'&$expand=fields&$top=500');
   lesGegevenEigen = new Map();
   if(data && data.value) {
     data.value.forEach(item => {
       const f = item.fields;
+      if(!f || !f.LesID) return;
       if(!lesGegevenEigen.has(f.LesID)) lesGegevenEigen.set(f.LesID, []);
       lesGegevenEigen.get(f.LesID).push({ schoolJaar: f.Schooljaar, datum: f.Datum, bron: f.Bron });
     });
@@ -3431,9 +3432,9 @@ function lesGegevenInfo(lesId) {
 async function loadTeamGegevenLessen(schoolJaar) {
   if(!dkToken || !CFG.lijsten.lesgegeven) return [];
   schoolJaar = schoolJaar || getSchoolJaar();
-  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$filter=fields/Schooljaar eq \'' + schoolJaar + '\'&$select=fields&$top=2000');
+  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$filter=fields/Schooljaar eq \'' + schoolJaar + '\'&$expand=fields&$top=2000');
   if(!data || !data.value) return [];
-  return data.value.map(item => ({
+  return data.value.filter(item => item.fields).map(item => ({
     email:    item.fields.Email,
     lesId:    item.fields.LesID,
     lesNaam:  item.fields.Lesnaam,
@@ -3456,9 +3457,9 @@ async function loadTeamGegevenLessen(schoolJaar) {
 let heeftTeamToegang = false;
 async function teamToegangProbe() {
   if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { heeftTeamToegang = false; return false; }
-  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$select=fields&$top=50');
+  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$expand=fields&$top=50');
   if(!data || !data.value) { heeftTeamToegang = false; return false; }
-  heeftTeamToegang = data.value.some(item => (item.fields.Email || '').toLowerCase() !== dkEmail);
+  heeftTeamToegang = data.value.some(item => item.fields && (item.fields.Email || '').toLowerCase() !== dkEmail);
   return heeftTeamToegang;
 }
 
