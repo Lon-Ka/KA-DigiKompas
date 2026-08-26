@@ -3890,10 +3890,18 @@ async function renderTeamOverzicht(){
   // Groepeer per les
   const perLes = new Map();
   rows.forEach(r => {
-    if(!perLes.has(r.lesId)) perLes.set(r.lesId, { lesNaam: r.lesNaam, fase: r.fase, leerlijn: r.leerlijn, docenten: [] });
+    if(!perLes.has(r.lesId)) perLes.set(r.lesId, { lesId: r.lesId, lesNaam: r.lesNaam, fase: r.fase, leerlijn: r.leerlijn, docenten: [] });
     perLes.get(r.lesId).docenten.push({ email: r.email, datum: r.datum, bron: r.bron });
   });
   const lesArr = [...perLes.values()].sort((a,b) => a.lesNaam.localeCompare(b.lesNaam));
+
+  // Gemiddelde sterrenbeoordeling per les ophalen (uit de lesreflecties)
+  await Promise.all(lesArr.map(async l => {
+    const reflecties = await loadReflecties(l.lesId);
+    const scores = reflecties.map(r => r.beoordeling).filter(b => b > 0);
+    l.gemBeoordeling = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length) : null;
+    l.aantalReflecties = scores.length;
+  }));
 
   const perDocent = new Map();
   rows.forEach(r => {
@@ -3922,6 +3930,7 @@ async function renderTeamOverzicht(){
           <th style="padding:8px 10px;">Les</th>
           <th style="padding:8px 10px;">Leerlijn</th>
           <th style="padding:8px 10px;">Fase</th>
+          <th style="padding:8px 10px;">Beoordeling</th>
           <th style="padding:8px 10px;">Gegeven door</th>
         </tr>
       </thead>
@@ -3930,6 +3939,7 @@ async function renderTeamOverzicht(){
           <td style="padding:8px 10px;font-weight:600;">${l.lesNaam}</td>
           <td style="padding:8px 10px;"><span style="font-size:10px;font-weight:700;color:${LL_COLS[l.leerlijn]||'var(--muted)'}">${LL_LABELS[l.leerlijn]||l.leerlijn}</span></td>
           <td style="padding:8px 10px;">${FL[l.fase]||l.fase}</td>
+          <td style="padding:8px 10px;white-space:nowrap;">${l.gemBeoordeling ? `⭐ ${l.gemBeoordeling.toFixed(1)} <span style="color:var(--muted);font-size:.75rem;">(${l.aantalReflecties})</span>` : `<span style="color:var(--muted);font-size:.78rem;">—</span>`}</td>
           <td style="padding:8px 10px;">${l.docenten.map(d => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:1px;font-size:.76rem;" title="${new Date(d.datum).toLocaleDateString('nl-BE')} · ${d.bron}">${d.email}</span>`).join('')}</td>
         </tr>`).join('')}
       </tbody>
