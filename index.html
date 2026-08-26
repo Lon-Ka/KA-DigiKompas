@@ -3213,7 +3213,12 @@ var dkEmail = '';
 async function dkGet(url) {
   if(!dkToken) { console.warn('DigiKompas: dkGet zonder token —', url); return null; }
   const r = await fetch('https://graph.microsoft.com/v1.0' + url, {
-    headers: { Authorization: 'Bearer ' + dkToken }
+    headers: {
+      Authorization: 'Bearer ' + dkToken,
+      // Staat toe te filteren op niet-geïndexeerde SharePoint-kolommen (bv. Email, LesID,
+      // Schooljaar). Zonder deze header geeft SharePoint een 400 BadRequest terug.
+      Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly',
+    }
   });
   if(!r.ok) {
     const body = await r.text().catch(()=> '');
