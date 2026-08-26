@@ -267,6 +267,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .gegeven-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:20px;margin-top:auto;width:fit-content}
 .gegeven-nu{background:#e3f6e9;color:#1a7a42;border:1px solid #8fd6a8}
 .gegeven-vorig{background:#fdeee3;color:#a34c12;border:1px solid #f0b788}
+.beoordeling-badge{display:inline-flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:#b8860b;margin-left:8px}
 .gegeven-toggle{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:8px 16px;border-radius:9px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
 .gegeven-toggle:hover{background:var(--border)}
 .gegeven-toggle.on{background:#e3f6e9;border-color:#8fd6a8;color:#1a7a42}
@@ -3407,6 +3408,26 @@ async function unmarkLesGegeven(lesId) {
 }
 
 // Laadt alle eigen 'gegeven'-lessen (huidig + vorig schooljaar) — 1x aangeroepen bij opstart.
+// Gemiddelde sterrenbeoordeling per les, voor de badge op de lessenkaarten.
+// Eén query voor alle lessen samen i.p.v. per les apart.
+let lesBeoordelingen = new Map();
+async function loadAlleBeoordelingen() {
+  if(!dkToken || !CFG.lijsten.lesreflectie) return;
+  const data = await dkGet(spUrl(CFG.lijsten.lesreflectie) + '?$expand=fields&$top=2000');
+  if(!data || !data.value) return;
+  const perLes = new Map();
+  data.value.forEach(item => {
+    const f = item.fields;
+    if(!f || !f.LesID || !(f.Beoordeling > 0)) return;
+    if(!perLes.has(f.LesID)) perLes.set(f.LesID, []);
+    perLes.get(f.LesID).push(f.Beoordeling);
+  });
+  lesBeoordelingen = new Map();
+  perLes.forEach((scores, lesId) => {
+    lesBeoordelingen.set(lesId, { gemiddelde: scores.reduce((a,b)=>a+b,0) / scores.length, aantal: scores.length });
+  });
+}
+
 async function loadEigenGegevenLessen() {
   if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { lesGegevenGeladen = true; return; }
   const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$filter=fields/Email eq \'' + dkEmail + '\'&$expand=fields&$top=500');
@@ -3559,10 +3580,12 @@ function renderGrid(){
     const gegevenBadge = gi.ditJaar
       ? `<span class="gegeven-badge gegeven-nu" title="Al gegeven dit schooljaar (${getSchoolJaar()})">✓ gegeven ${getSchoolJaar()}</span>`
       : (gi.vorigJaar ? `<span class="gegeven-badge gegeven-vorig" title="Gegeven vorig schooljaar — overweeg een andere les">⚠ gegeven ${vorigSchoolJaar(getSchoolJaar())}</span>` : '');
+    const beo = lesBeoordelingen.get(l.id);
+    const beoordelingBadge = beo ? `<span class="beoordeling-badge" title="${beo.aantal} beoordeling${beo.aantal>1?'en':''}">⭐ ${beo.gemiddelde.toFixed(1)}</span>` : '';
     return `<div class="card ${l.ll}" onclick="openLesson(${l.id})">
     <span class="ctag ${l.ll}">${LL[l.ll]}</span>
     <div class="ctitle">${l.titel}</div>
-    <div class="cmeta"><span><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${l.duur}</span></div>
+    <div class="cmeta"><span><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${l.duur}</span>${beoordelingBadge}</div>
     ${l.dig_codes&&l.dig_codes.length?'<div class="dig-codes">'+l.dig_codes.map(c=>'<span class="dig-code '+l.ll+'">'+c+'</span>').join('')+'</div>':''}
     ${l.unplugged?'<span class="up-badge">✂ unplugged</span>':''}
     ${gegevenBadge}
@@ -5584,6 +5607,8 @@ async function submitReflectie() {
 
   // Herlaad reflecties
   await loadReflectiesTab(rfLesId);
+  // Werk de beoordeling-badge op de lessenkaart meteen bij
+  await loadAlleBeoordelingen();
 }
 
 // ── Jaarplan auto-save ─────────────────────────────────────
@@ -5617,7 +5642,7 @@ dkInit().then(async () => {
   updateCounts();
   renderGrid();
   showView('zelfscan');
-  await loadEigenGegevenLessen();
+  await Promise.all([loadEigenGegevenLessen(), loadAlleBeoordelingen()]);
   renderGrid();
   await teamToegangProbe();
   if (document.getElementById('nav-team')) {
