@@ -3145,13 +3145,9 @@ const DK_CONFIG = {
       zelfscan:     '38b0af13-8988-40c1-89a2-19ee2f0da5e9',
       jaarplan:     'd847a8d2-b3ac-411f-917c-18f6583793a0',
       lesreflectie: 'bdc44cf1-75f3-4dbe-a715-1c4bb4159aba',
-      lesgegeven:   '', // TODO: aanmaken in SharePoint — zie SHAREPOINT_LIJST_LESGEGEVEN.md
+      lesgegeven:   'fd76657d-3bd2-43b5-88ed-669e0d129c04',
     },
     redirectUri: 'https://lon-ka.github.io/KA-DigiKompas/',
-    admin: {
-      emails: { 'ict@gebaska.be': 'admin' },
-      upnPatterns: [ { pattern: /directie/i, role: 'directie' } ],
-    },
   },
   LON: {
     clientId:   '481e8cb4-58ca-49b1-bb8b-5b02cbb45b4c',
@@ -3164,10 +3160,6 @@ const DK_CONFIG = {
       lesgegeven:   '', // TODO: aanmaken in SharePoint — zie SHAREPOINT_LIJST_LESGEGEVEN.md
     },
     redirectUri: 'https://lon-ka.github.io/LON-DigiKompas/',
-    admin: {
-      emails: { 'ict@centrumschool.londerzeel.be': 'admin' },
-      upnPatterns: [ { pattern: /directie/i, role: 'directie' } ],
-    },
   }
 };
 
@@ -3177,13 +3169,8 @@ const DK_CONFIG = {
 const TENANT = 'KA';
 const CFG = DK_CONFIG[TENANT];
 
-// Is de huidige gebruiker (op basis van dkEmail, pas gevuld na dkInit) een
-// coördinator/directielid? Gebruikt om het Teamoverzicht te tonen.
-function dkIsAdmin() {
-  if (!dkEmail) return false;
-  if (CFG.admin.emails[dkEmail]) return true;
-  return CFG.admin.upnPatterns.some(p => p.pattern.test(dkEmail));
-}
+// Teamtoegang wordt niet via e-mailadressen in de code bepaald, maar via de
+// SharePoint-rechten op de 'lesgegeven'-lijst zelf — zie teamToegangProbe() verderop.
 
 // ── MSAL ────────────────────────────────────────────────────
 var msalApp = null;
@@ -3434,6 +3421,24 @@ async function loadTeamGegevenLessen(schoolJaar) {
     datum:    item.fields.Datum,
     bron:     item.fields.Bron,
   }));
+}
+
+// ── TEAMTOEGANG (rechten-gebaseerd, geen e-mailadressen in de code) ──────────
+// Idee: op de 'lesgegeven'-lijst staat item-niveau-beveiliging ("Read items that
+// were created by the user") voor gewone leerkrachten, en volledige leesrechten
+// voor een SharePoint-groep coördinatoren/directie. We vragen gewoon alle items
+// op (zonder e-mailfilter) en laten SharePoint zelf bepalen wat er terugkomt:
+// - komt er een item van een ANDER e-mailadres dan het eigen terug? → volledige
+//   teamtoegang → Team-tabblad tonen.
+// - komt er enkel eigen data (of niets) terug? → geen teamtoegang → verbergen.
+// Zie SHAREPOINT_LIJST_LESGEGEVEN.md voor hoe je die rechten instelt.
+let heeftTeamToegang = false;
+async function teamToegangProbe() {
+  if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { heeftTeamToegang = false; return false; }
+  const data = await dkGet(spUrl(CFG.lijsten.lesgegeven) + '?$select=fields/Email&$top=50');
+  if(!data || !data.value) { heeftTeamToegang = false; return false; }
+  heeftTeamToegang = data.value.some(item => (item.fields.Email || '').toLowerCase() !== dkEmail);
+  return heeftTeamToegang;
 }
 
 // ═══════════════════════════════════════════
@@ -5559,8 +5564,9 @@ dkInit().then(async () => {
   showView('zelfscan');
   await loadEigenGegevenLessen();
   renderGrid();
+  await teamToegangProbe();
   if (document.getElementById('nav-team')) {
-    document.getElementById('nav-team').style.display = dkIsAdmin() ? '' : 'none';
+    document.getElementById('nav-team').style.display = heeftTeamToegang ? '' : 'none';
   }
 });
 
