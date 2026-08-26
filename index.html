@@ -3639,7 +3639,7 @@ function renderDetail(id){
     <button class="dtab" onclick="switchTab(this,'tab-doelen')">Leerdoelen</button>
     <button class="dtab" onclick="switchTab(this,'tab-mat')">Materialen & differentiatie</button>
     <button class="dtab" onclick="switchTab(this,'tab-eval')">Evaluatie</button>
-    <button class="dtab" onclick="switchTab(this,'tab-reflectie');loadReflectiesTab(${l.id})">💬 Reflecties</button>
+    <button class="dtab" onclick="switchTab(this,'tab-reflectie');loadReflectiesTab(${l.id})">⭐ Beoordeling</button>
   </div>
   <div class="dbody">
     <div class="dtab-content active" id="tab-les">
@@ -3703,12 +3703,11 @@ function renderDetail(id){
     rfDiv.className = 'dtab-content';
     rfDiv.id = 'tab-reflectie';
     rfDiv.innerHTML = `
-    <div class="dtab-content" id="tab-reflectie">
       <div class="dsec">
-        <div class="dsec-title">💬 Lesreflecties</div>
-        <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">Deel je ervaringen. Reflecties van collega's zijn anoniem zichtbaar als inspiratie.</p>
+        <div class="dsec-title">⭐ Beoordeling</div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">Deel je ervaringen. Beoordelingen van collega's zijn anoniem zichtbaar als inspiratie.</p>
         <div id="reflectie-form" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;">
-          <div style="font-size:.85rem;font-weight:700;margin-bottom:12px;">📝 Voeg jouw reflectie toe</div>
+          <div style="font-size:.85rem;font-weight:700;margin-bottom:12px;">📝 Voeg jouw beoordeling toe</div>
           <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Wat werkte goed?</label>
           <textarea id="rf-sterktes" rows="2" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:.82rem;margin-bottom:10px;resize:vertical;"></textarea>
           <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Wat kan beter?</label>
@@ -3734,10 +3733,9 @@ function renderDetail(id){
           <button onclick="submitReflectie()" style="margin-top:14px;padding:9px 20px;background:#0F1D2E;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;">Opslaan</button>
           <span id="rf-saved" style="display:none;margin-left:10px;font-size:.8rem;color:#2E8B57;font-weight:600;">✓ Opgeslagen!</span>
         </div>
-        <div style="font-size:.82rem;font-weight:700;margin-bottom:10px;color:var(--muted);">Reflecties van collega's</div>
+        <div style="font-size:.82rem;font-weight:700;margin-bottom:10px;color:var(--muted);">Beoordelingen van collega's</div>
         <div id="reflecties-lijst" style="display:flex;flex-direction:column;gap:10px;"></div>
-      </div>
-    </div>`;
+      </div>`;
     dbody.appendChild(rfDiv);
   }
 }
@@ -5545,13 +5543,13 @@ async function loadReflectiesTab(lesId) {
 
   const reflecties = await loadReflecties(lesId);
   if(!reflecties.length) {
-    lijst.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:20px;">Nog geen reflecties voor deze les. Wees de eerste!</div>';
+    lijst.innerHTML = '<div style="font-size:.8rem;color:var(--muted);text-align:center;padding:20px;">Nog geen beoordelingen voor deze les. Wees de eerste!</div>';
     return;
   }
 
   lijst.innerHTML = reflecties.map(r => {
     const sterren = '★'.repeat(r.beoordeling || 0) + '☆'.repeat(5 - (r.beoordeling || 0));
-    const naam = r.isOwn ? 'Jouw reflectie' : (r.anoniem ? 'Anonieme collega' : r.email);
+    const naam = r.isOwn ? 'Jouw beoordeling' : (r.anoniem ? 'Anonieme collega' : r.email);
     const datum = r.datum ? new Date(r.datum).toLocaleDateString('nl-BE') : '';
     const kleur = r.isOwn ? '#e8f5ee' : '#f5f7fa';
     const border = r.isOwn ? '1.5px solid #2E8B57' : '1px solid #DDE3EC';
