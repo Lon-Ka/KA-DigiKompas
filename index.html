@@ -3213,11 +3213,13 @@ async function dkInit() {
   }
   if (dkUser) {
     dkEmail = (dkUser.username || '').toLowerCase();
+    dkNaam  = dkUser.name || dkEmail;
     console.log('DigiKompas: aangemeld als', dkEmail);
   }
 }
 
 var dkEmail = '';
+var dkNaam  = '';
 
 // ── GRAPH HELPERS ────────────────────────────────────────────
 async function dkGet(url) {
@@ -3374,19 +3376,24 @@ let lesGegevenGeladen = false;
 async function markLesGegeven(les, bron) {
   if(!dkToken || !dkEmail || !CFG.lijsten.lesgegeven) { console.warn('DigiKompas: kan les niet als gegeven markeren — geen login of geen lesgegeven-lijst gekoppeld.'); return false; }
   const schoolJaar = getSchoolJaar();
-  const result = await dkPost(spUrl(CFG.lijsten.lesgegeven), {
-    fields: {
-      Title:      dkEmail + ' - ' + les.titel + ' - ' + schoolJaar,
-      Email:      dkEmail,
-      Datum:      new Date().toISOString(),
-      LesID:      les.id,
-      Lesnaam:    les.titel,
-      Fase:       les.f,
-      Leerlijn:   les.ll,
-      Schooljaar: schoolJaar,
-      Bron:       bron || 'handmatig', // 'handmatig' of 'jaarplanner'
-    }
-  });
+  const basisVelden = {
+    Title:      dkEmail + ' - ' + les.titel + ' - ' + schoolJaar,
+    Email:      dkEmail,
+    Datum:      new Date().toISOString(),
+    LesID:      les.id,
+    Lesnaam:    les.titel,
+    Fase:       les.f,
+    Leerlijn:   les.ll,
+    Schooljaar: schoolJaar,
+    Bron:       bron || 'handmatig', // 'handmatig' of 'jaarplanner'
+  };
+  // Probeer eerst mét naam; als de kolom 'Naam' nog niet bestaat in SharePoint,
+  // val terug op opslaan zonder naam zodat de kernfunctie blijft werken.
+  let result = await dkPost(spUrl(CFG.lijsten.lesgegeven), { fields: { ...basisVelden, Naam: dkNaam } });
+  if(!result) {
+    console.warn('DigiKompas: opslaan met Naam-veld mislukt, probeer zonder (kolom \'Naam\' bestaat mogelijk nog niet) …');
+    result = await dkPost(spUrl(CFG.lijsten.lesgegeven), { fields: basisVelden });
+  }
   if(!result) {
     alert('Kon niet opslaan naar SharePoint. Open de browserconsole (F12) voor het foutdetail, of probeer later opnieuw.');
     return false;
@@ -3466,6 +3473,7 @@ async function loadTeamGegevenLessen(schoolJaar) {
   if(!data || !data.value) return [];
   return data.value.filter(item => item.fields).map(item => ({
     email:    item.fields.Email,
+    naam:     item.fields.Naam || item.fields.Email,
     lesId:    item.fields.LesID,
     lesNaam:  item.fields.Lesnaam,
     fase:     item.fields.Fase,
@@ -3910,14 +3918,16 @@ async function renderTeamOverzicht(){
 
   // Leerkracht-dropdown vullen op basis van dit schooljaar, met behoud van huidige keuze indien nog geldig
   const huidigeDocentKeuze = docentSel.value;
-  const docenten = [...new Set(alleRows.map(r => r.email))].sort();
-  docentSel.innerHTML = `<option value="">Alle leerkrachten</option>` + docenten.map(e => `<option value="${e}">${e}</option>`).join('');
+  const naamPerEmail = new Map();
+  alleRows.forEach(r => { if(!naamPerEmail.has(r.email)) naamPerEmail.set(r.email, r.naam); });
+  const docenten = [...naamPerEmail.keys()].sort((a,b) => (naamPerEmail.get(a)||a).localeCompare(naamPerEmail.get(b)||b));
+  docentSel.innerHTML = `<option value="">Alle leerkrachten</option>` + docenten.map(e => `<option value="${e}">${naamPerEmail.get(e) || e}</option>`).join('');
   docentSel.value = docenten.includes(huidigeDocentKeuze) ? huidigeDocentKeuze : '';
 
   const rows = docentSel.value ? alleRows.filter(r => r.email === docentSel.value) : alleRows;
 
   if(!rows.length){
-    cont.innerHTML = `<div class="empty"><p>${docentSel.value ? `Geen lessen gevonden voor ${docentSel.value} in schooljaar ${schoolJaar}.` : `Nog geen lessen gemarkeerd als "gegeven" voor schooljaar ${schoolJaar}.`}</p></div>`;
+    cont.innerHTML = `<div class="empty"><p>${docentSel.value ? `Geen lessen gevonden voor ${naamPerEmail.get(docentSel.value) || docentSel.value} in schooljaar ${schoolJaar}.` : `Nog geen lessen gemarkeerd als "gegeven" voor schooljaar ${schoolJaar}.`}</p></div>`;
     return;
   }
 
@@ -3925,7 +3935,7 @@ async function renderTeamOverzicht(){
   const perLes = new Map();
   rows.forEach(r => {
     if(!perLes.has(r.lesId)) perLes.set(r.lesId, { lesId: r.lesId, lesNaam: r.lesNaam, fase: r.fase, leerlijn: r.leerlijn, docenten: [] });
-    perLes.get(r.lesId).docenten.push({ email: r.email, datum: r.datum, bron: r.bron });
+    perLes.get(r.lesId).docenten.push({ email: r.email, naam: r.naam, datum: r.datum, bron: r.bron });
   });
   const lesArr = [...perLes.values()].sort((a,b) => a.lesNaam.localeCompare(b.lesNaam));
 
@@ -3974,7 +3984,7 @@ async function renderTeamOverzicht(){
           <td style="padding:8px 10px;"><span style="font-size:10px;font-weight:700;color:${LL_COLS[l.leerlijn]||'var(--muted)'}">${LL_LABELS[l.leerlijn]||l.leerlijn}</span></td>
           <td style="padding:8px 10px;">${FL[l.fase]||l.fase}</td>
           <td style="padding:8px 10px;white-space:nowrap;">${l.gemBeoordeling ? `⭐ ${l.gemBeoordeling.toFixed(1)} <span style="color:var(--muted);font-size:.75rem;">(${l.aantalReflecties})</span>` : `<span style="color:var(--muted);font-size:.78rem;">—</span>`}</td>
-          <td style="padding:8px 10px;">${l.docenten.map(d => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:1px;font-size:.76rem;" title="${new Date(d.datum).toLocaleDateString('nl-BE')} · ${d.bron}">${d.email}</span>`).join('')}</td>
+          <td style="padding:8px 10px;">${l.docenten.map(d => `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:2px 9px;margin:1px;font-size:.76rem;" title="${d.email} · ${new Date(d.datum).toLocaleDateString('nl-BE')} · ${d.bron}">${d.naam || d.email}</span>`).join('')}</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
