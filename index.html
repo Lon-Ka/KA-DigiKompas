@@ -206,6 +206,12 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .zs-sec-t.media{color:var(--media)}
 .zs-sec-t.comp{color:var(--comp)}
 .zsq{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:6px}
+.zs-hist{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:1.25rem}
+.zs-hist-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.zs-hist-rij{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--border);font-size:12px}
+.zs-hist-rij:first-of-type{border-top:none}
+.zs-hist-d{font-weight:700;min-width:84px}.zs-hist-f{color:var(--muted);min-width:110px}.zs-hist-s{flex:1;font-weight:600;font-size:11.5px}.zs-hist-s span{white-space:nowrap}
+.zs-verg{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;margin:10px 0 0}
 .zsq.zsq-mist{border-color:#c0392b;background:#fdf0f0}
 .zs-mist-msg{background:#fdf0f0;border:1.5px solid #e8a39b;border-radius:var(--radius-sm);padding:10px 12px;font-size:12.5px;color:#8a2a1f}
 .pb.vb{font-size:12px}
@@ -314,6 +320,13 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .jp-add-btn:hover{border-color:var(--ict);color:var(--ict);background:var(--ict-l)}
 .jp-picker{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center}
 .jp-picker.open{display:flex}
+.indien-intro{font-size:12.5px;line-height:1.55;background:var(--ict-l);border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:6px}
+.in-lbl{display:block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 4px}
+.in-inp{width:100%;box-sizing:border-box;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--font-b);font-size:13px;background:var(--surface);color:var(--text)}
+.in-inp:focus{outline:none;border-color:var(--ict)}
+.in-rij{display:grid;grid-template-columns:1fr 1fr 110px;gap:8px}
+@media(max-width:560px){.in-rij{grid-template-columns:1fr}}
+
 .jp-picker-box{background:var(--surface);border-radius:var(--radius);width:min(560px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.18)}
 .jp-picker-hdr{padding:1rem 1.25rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .jp-picker-title{font-family:var(--font-h);font-size:15px;font-weight:800}
@@ -565,6 +578,7 @@ if (window.self === window.top) {
   <main class="main">
     <div class="mhdr">
       <div><div class="mtitle" id="main-title">Alle lessen</div><div class="mcnt" id="main-cnt"></div></div>
+      <button class="btn" onclick="openIndienen()" style="margin-left:auto;margin-right:8px;white-space:nowrap" title="Bezorg een les die je zelf maakte aan de ICT-coördinator">✍ Eigen les indienen</button>
       <div class="srchwrap">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input class="srch" type="search" placeholder="Zoek op titel…" id="srch" oninput="renderGrid()">
@@ -634,6 +648,7 @@ if (window.self === window.top) {
       </div>
     </div>
 
+    <div id="zs-historiek"></div>
     <div id="zs-content"></div>
   </div>
 </div>
@@ -920,6 +935,61 @@ if (window.self === window.top) {
     <div style="margin-top:1.25rem;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:11px;color:var(--muted)">
       📌 Bron: OVSG Leer Lokaal — Digitale geletterdheid, basisonderwijs. Goedgekeurd leerplan. Raadpleeg de officiële OVSG-omgeving voor de volledige en meest recente versie.
       <a href="https://www.ovsg.be/onze-themas/leerplannen-didactiek/basisonderwijs/leer-lokaal/leerplan-leer-lokaal" target="_blank" style="color:var(--ict);font-weight:600;margin-left:6px">↗ Naar OVSG Leer Lokaal</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LES INDIENEN ══════════ -->
+<div class="jp-picker" id="indien-modal">
+  <div class="jp-picker-box" style="width:min(640px,95vw);max-height:90vh">
+    <div class="jp-picker-hdr">
+      <div class="jp-picker-title">✍ Eigen les indienen</div>
+      <button class="jp-picker-close" onclick="sluitIndienen()" aria-label="Sluiten">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:1rem 1.25rem">
+      <div id="indien-form">
+        <div class="indien-intro">Heb je zelf een les rond digitale geletterdheid gemaakt? Bezorg ze hier. De ICT-coördinator zet ze om naar het DigiKompas-formaat (lesverloop, OVSG-doelen, differentiatie) en voegt ze toe voor iedereen.
+          <div id="indien-login-info" style="margin-top:6px"></div></div>
+        <form id="indien-form-el" onsubmit="event.preventDefault();verstuurIndiening()">
+          <label class="in-lbl">Titel van de les *</label>
+          <input id="in-titel" class="in-inp" maxlength="120" placeholder="bv. Op zoek naar patronen in de natuur">
+          <div class="in-rij">
+            <div><label class="in-lbl">Leerlijn *</label>
+              <select id="in-ll" class="in-inp"><option value="">Kies…</option><option value="ict">ICT-basisvaardigheden</option><option value="comp">Computationeel denken</option><option value="media">Mediawijsheid</option><option value="onbekend">Weet ik niet</option></select></div>
+            <div><label class="in-lbl">Fase *</label>
+              <select id="in-fase" class="in-inp"><option value="">Kies…</option><option value="1">Fase 1 · Instap–K2</option><option value="2">Fase 2 · K3 + L1</option><option value="3">Fase 3 · L2–L4</option><option value="4">Fase 4 · L5 + L6</option><option value="onbekend">Weet ik niet</option></select></div>
+            <div><label class="in-lbl">Duur</label><input id="in-duur" class="in-inp" placeholder="bv. 45 min"></div>
+          </div>
+          <label class="in-lbl">Wat leren of doen de leerlingen? *</label>
+          <textarea id="in-omschr" class="in-inp" rows="3" placeholder="Kort: het doel van de les en wat leerlingen doen."></textarea>
+          <label class="in-lbl">Lesverloop <span style="font-weight:400;text-transform:none;letter-spacing:0">(of voeg je lesvoorbereiding toe als bestand)</span></label>
+          <textarea id="in-verloop" class="in-inp" rows="4" placeholder="Stap 1 … Stap 2 …"></textarea>
+          <label class="in-lbl">Bestanden <span style="font-weight:400;text-transform:none;letter-spacing:0">(lesvoorbereiding, werkbladen, foto's — max. 50 MB per bestand)</span></label>
+          <input id="in-bestanden" type="file" multiple accept=".pdf,.docx,.doc,.pptx,.ppt,.xlsx,.odt,.odp,.jpg,.jpeg,.png,.txt" onchange="indienBestandenInfo()" class="in-inp" style="padding:6px">
+          <div id="in-bestanden-lijst" style="font-size:11.5px;color:var(--muted);margin:4px 0 0"></div>
+          <label class="in-lbl">Is dit eigen materiaal? *</label>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:12.5px">
+            <label><input type="radio" name="in-bron" value="eigen"> Ja, volledig zelf gemaakt</label>
+            <label><input type="radio" name="in-bron" value="methode" onchange="document.getElementById('in-bron-info').focus()"> Gebaseerd op een methode, website of ander materiaal</label>
+            <input id="in-bron-info" class="in-inp" placeholder="Welke methode of bron? (bv. Bingel, KlasCement, mediawijs.be)">
+          </div>
+          <label class="in-lbl">Opmerkingen</label>
+          <textarea id="in-opm" class="in-inp" rows="2" placeholder="bv. werkt goed in duo's, nodig: 6 tablets"></textarea>
+          <label style="display:flex;gap:7px;align-items:flex-start;font-size:12.5px;margin-top:10px"><input type="checkbox" id="in-naam" checked style="margin-top:2px"> Mijn naam mag als auteur bij de les vermeld worden.</label>
+          <div id="indien-fout" class="zs-mist-msg" style="display:none;margin-top:10px"></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+            <button type="submit" class="btn p" id="indien-verstuur">Les indienen</button>
+            <button type="button" class="btn" onclick="sluitIndienen()">Annuleren</button>
+            <span id="indien-status" style="font-size:11.5px;color:var(--muted)"></span>
+          </div>
+        </form>
+      </div>
+      <div id="indien-klaar" style="display:none;text-align:center;padding:1.5rem .5rem">
+        <div style="font-size:34px">✅</div>
+        <div style="font-family:var(--font-h);font-size:16px;font-weight:800;margin:6px 0">Bedankt, je les is ingediend!</div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.55">De ICT-coördinator bekijkt je les en zet ze om naar het DigiKompas-formaat. Zodra ze is toegevoegd, vind je ze tussen de andere lessen.</div>
+        <div style="margin-top:14px;display:flex;gap:8px;justify-content:center"><button class="btn" onclick="openIndienen()">Nog een les indienen</button><button class="btn p" onclick="sluitIndienen()">Sluiten</button></div>
+      </div>
     </div>
   </div>
 </div>
@@ -3520,18 +3590,22 @@ const DK_CONFIG = {
       lesgegeven:   'fd76657d-3bd2-43b5-88ed-669e0d129c04',
     },
     redirectUri: 'https://lon-ka.github.io/KA-DigiKompas/',
+    indienMap:   'DigiKompas lesindieningen', // map in de documentbibliotheek van de site
+    ictMail:     'ict@gebaska.be', // terugvaloptie bij indienen
   },
   LON: {
     clientId:   '481e8cb4-58ca-49b1-bb8b-5b02cbb45b4c',
     tenantId:   '655d15e1-e5fc-4868-8462-8463dc0ff014',
-    siteId:     'londerzeel.sharepoint.com,0af3ab31-8b22-413c-956f-047ffbbcf86c,e0158228-22a6-4225-87dc-fe7d619ae7e4',
-    lijsten: {
-      zelfscan:     '38b0af13-8988-40c1-89a2-19ee2f0da5e9',
-      jaarplan:     'd847a8d2-b3ac-411f-917c-18f6583793a0',
-      lesreflectie: 'bdc44cf1-75f3-4dbe-a715-1c4bb4159aba',
-      lesgegeven:   '', // TODO: aanmaken in SharePoint — zie SHAREPOINT_LIJST_LESGEGEVEN.md
+    siteId:     'londerwijs.sharepoint.com,531cc6f8-fb38-4684-a129-423d09fd6694,4d5ecb10-38f0-422f-b892-af256a5da6fc',
+    lijsten: { // aangemaakt 05/10/2026 met DigiKompas_LON_lijsten.ps1 op BaO - DigiKompas
+      zelfscan:     'cf407050-aca8-4f47-a674-c8c3af5c1244',
+      jaarplan:     'd609c559-7f9c-45a2-b0db-ff90cdfca845',
+      lesreflectie: 'fd7d350f-b6c7-4abf-83a4-3f83419c3c4e',
+      lesgegeven:   'c4f29921-14c4-47d0-8215-37361560175e',
     },
     redirectUri: 'https://lon-ka.github.io/LON-DigiKompas/',
+    indienMap:   'DigiKompas lesindieningen', // map in de documentbibliotheek van de site
+    ictMail:     'ict@londerwijs.londerzeel.be', // terugvaloptie bij indienen
   }
 };
 
@@ -4035,6 +4109,7 @@ function renderDetail(id){
       <span class="tag ${l.ll}">${LL[l.ll]}</span>
       <span class="tag n">${FL[l.f]}</span>
       <span class="tag n">⏱ ${l.duur}</span>
+      ${l.auteur?'<span class="tag n" title="Les ingediend door een collega">✍ '+l.auteur+'</span>':''}
       ${l.dig_codes&&l.dig_codes.length ? l.dig_codes.map(c=>'<span class="dig-code '+l.ll+'" style="font-size:10px;padding:3px 8px;border-radius:6px">'+c+'</span>').join('') : ''}
       ${l.unplugged?'<span class="up-badge">✂ unplugged — geen computer nodig</span>':''}
     </div>
@@ -4940,6 +5015,7 @@ function setZSPhase(fase, btn) {
   document.querySelectorAll('.zs-phase-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderZSContent(fase);
+  renderZSHistoriek();
 }
 
 function renderZS() {
@@ -4950,6 +5026,7 @@ function renderZS() {
   zsActivePhase = null;
   zsLaatste = null;
   document.querySelectorAll('.zs-phase-btn').forEach(b => b.classList.remove('active'));
+  renderZSHistoriek();
 }
 
 function renderZSContent(fase) {
@@ -5047,12 +5124,25 @@ function doZS(fase) {
   const LABS = { ict: 'ICT-basisvaardigheden', media: 'Mediawijsheid', comp: 'Computationeel denken' };
   const prof = ZS_PROF[fase] || {};
   const voorstel = zsJaarplan(fase, pcts);
-  zsLaatste = { fase, pcts, ...voorstel };
 
-  saveZelfscan(fase, pcts, r.antw).then(() => {
-    const savedMsg = document.getElementById('zs-saved-msg');
-    if (savedMsg) { savedMsg.style.display = ''; setTimeout(() => savedMsg.style.display = 'none', 3000); }
-  });
+  // Vorige scan van deze fase. Klikt de leerkracht opnieuw op "Bekijk mijn resultaat"
+  // zonder iets te wijzigen, dan bewaren we niet opnieuw en vergelijken we met de scan daarvoor.
+  const vanFase = zsHistoriek.filter(h => h.fase === fase);
+  const ongewijzigd = vanFase[0] && vanFase[0].sessie && JSON.stringify(vanFase[0].antw) === JSON.stringify(r.antw);
+  const vergelijk = ongewijzigd ? (vanFase[1] || null) : (vanFase[0] || null);
+  zsLaatste = { fase, pcts, vergelijk, ...voorstel };
+
+  if (!ongewijzigd) {
+    saveZelfscan(fase, pcts, r.antw).then(() => {
+      const savedMsg = document.getElementById('zs-saved-msg');
+      if (savedMsg) { savedMsg.style.display = ''; setTimeout(() => savedMsg.style.display = 'none', 3000); }
+    });
+    if (dkToken) {
+      zsHistoriek.unshift({ datum: new Date(), fase, oud: null, pcts: { ...pcts }, antw: { ...r.antw }, sessie: true });
+      zsHistoriekGeladen = true;
+      renderZSHistoriek();
+    }
+  }
 
   // Sterkste / grootste groeikans — enkel als er echt verschil is
   const max = Math.max(...ZS_LL.map(ll => pcts[ll]));
@@ -5096,6 +5186,7 @@ function doZS(fase) {
     </div>`;
   }).join('')}
   <div style="font-size:10.5px;color:var(--muted);margin-top:-2px">Schaal: 0–33% ${ZS_NIVEAUS[0].label} · 34–66% ${ZS_NIVEAUS[1].label} · 67–100% ${ZS_NIVEAUS[2].label}</div>
+  ${zsVergelijkHtml(vergelijk, pcts)}
 
   ${profielHtml}
 
@@ -5186,6 +5277,92 @@ function doZS(fase) {
   </div>`;
 }
 
+// ═══════════════════════════════════════════
+// ZELFSCAN — vorige scans terugzien, inladen en vergelijken
+// ═══════════════════════════════════════════
+let zsHistoriek = [];        // [{ datum: Date, fase: '1'..'4' | null, oud: '1'..'4' | null, pcts, antw }]
+let zsHistoriekGeladen = false;
+
+async function loadZelfscans() {
+  if (!dkToken || !dkEmail || !CFG.lijsten.zelfscan) return;
+  const data = await dkGet(spUrl(CFG.lijsten.zelfscan) + '?$filter=fields/Email eq \'' + dkEmail + '\'&$expand=fields&$top=100');
+  zsHistoriek = ((data && data.value) || []).map(it => {
+    const f = it.fields || {};
+    const m = /^F([1-4])$/.exec(f.Fase || '');
+    let antw = {};
+    try { antw = JSON.parse(f.Antwoorden || '{}') || {}; } catch (e) { antw = {}; }
+    return {
+      datum: new Date(f.Datum || it.createdDateTime),
+      fase: m ? m[1] : null,                       // nieuwe indeling
+      oud: m ? null : (f.Fase || null),            // oude indeling ('1'–'4')
+      pcts: { ict: Math.round(+f.ScoreICT || 0), comp: Math.round(+f.ScoreComp || 0), media: Math.round(+f.ScoreMedia || 0) },
+      antw,
+    };
+  }).sort((a, b) => b.datum - a.datum);
+  zsHistoriekGeladen = true;
+  renderZSHistoriek();
+}
+
+// Meest recente bewaarde scan voor een fase (nieuwe indeling)
+function zsVorige(fase) { return zsHistoriek.find(h => h.fase === fase) || null; }
+
+function renderZSHistoriek() {
+  const box = document.getElementById('zs-historiek');
+  if (!box) return;
+  if (!zsHistoriekGeladen || !zsHistoriek.length) { box.innerHTML = ''; return; }
+  const LAB = { ict: 'ICT', comp: 'CT', media: 'Media' };
+  const COL = { ict: 'var(--ict)', comp: 'var(--comp)', media: 'var(--media)' };
+  const lijst = zsActivePhase ? zsHistoriek.filter(h => h.fase === zsActivePhase) : zsHistoriek;
+  const toon = lijst.slice(0, 6);
+  box.innerHTML = `<div class="zs-hist">
+    <div class="zs-hist-t">🕘 Mijn vorige zelfscans${zsActivePhase ? ' · ' + FL[zsActivePhase] : ''}</div>
+    ${toon.length ? toon.map(h => {
+      const idx = zsHistoriek.indexOf(h);
+      return `<div class="zs-hist-rij">
+        <span class="zs-hist-d">${h.datum.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        <span class="zs-hist-f">${h.fase ? FL[h.fase] : 'Fase ' + (h.oud || '?') + ' (oude indeling)'}</span>
+        <span class="zs-hist-s">${['ict', 'comp', 'media'].map(ll => `<span style="color:${COL[ll]}">${LAB[ll]} ${h.pcts[ll]}%</span>`).join(' · ')}</span>
+        ${h.fase ? `<button class="btn" style="font-size:11px;padding:4px 10px" onclick="zsLaadAntwoorden(${idx})" title="Vul de zelfscan in met deze antwoorden, zodat je enkel aanpast wat veranderde">↺ Antwoorden inladen</button>`
+                 : `<span style="font-size:10.5px;color:var(--muted)" title="De vragen zijn sinds de nieuwe fase-indeling veranderd">niet meer in te laden</span>`}
+      </div>`;
+    }).join('') : `<div style="font-size:12px;color:var(--muted)">Nog geen zelfscan bewaard voor deze fase.</div>`}
+    ${lijst.length > toon.length ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">+ ${lijst.length - toon.length} oudere</div>` : ''}
+  </div>`;
+}
+
+function zsLaadAntwoorden(idx) {
+  const h = zsHistoriek[idx];
+  if (!h || !h.fase) return;
+  if (zsActivePhase !== h.fase) setZSPhase(h.fase, document.querySelectorAll('.zs-phase-btn')[+h.fase - 1]);
+  let n = 0;
+  Object.entries(h.antw || {}).forEach(([qi, v]) => {
+    if (v === null || v === undefined || !qi.startsWith(h.fase + '_')) return;
+    const b = document.querySelector(`.zsopt[data-qi="${qi}"][data-v="${v}"]`);
+    if (b) { zsSelect(b); n++; }
+  });
+  const res = document.getElementById('zs-res');
+  res.style.display = 'block';
+  res.innerHTML = `<div style="background:var(--ict-l);border-radius:var(--radius-sm);padding:10px 12px;font-size:12.5px">↺ ${n} antwoorden van je zelfscan van <strong>${h.datum.toLocaleDateString('nl-BE')}</strong> ingeladen. Pas aan wat veranderd is en klik op <strong>Bekijk mijn resultaat</strong>.</div>`;
+  document.getElementById('zs-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Vergelijking met de vorige scan (HTML-blok voor het resultaat)
+function zsVergelijkHtml(vorige, pcts) {
+  if (!vorige) return '';
+  const LABS = { ict: 'ICT-basisvaardigheden', comp: 'Computationeel denken', media: 'Mediawijsheid' };
+  return `<div class="zs-verg">
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px">📈 Vergeleken met je zelfscan van ${vorige.datum.toLocaleDateString('nl-BE')}</div>
+    ${['ict', 'comp', 'media'].map(ll => {
+      const d = pcts[ll] - vorige.pcts[ll];
+      const kleur = d > 0 ? '#1a6e52' : d < 0 ? '#c0392b' : 'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0">
+        <span>${LABS[ll]}</span>
+        <span>${vorige.pcts[ll]}% → <strong>${pcts[ll]}%</strong> <span style="color:${kleur};font-weight:700;margin-left:4px">${d > 0 ? '+' + d : d < 0 ? d : '='}</span></span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 // ── Jaarplan overnemen vanuit zelfscan: neemt EXACT het getoonde voorstel over ──
 function applyJaarplanSuggestie(fase) {
   if (!zsLaatste || zsLaatste.fase !== fase) { alert('Klik eerst op "Bekijk mijn resultaat".'); return; }
@@ -5202,7 +5379,7 @@ function applyJaarplanSuggestie(fase) {
 // ── Afdrukken professionaliseringsvoorstel (gebruikt hetzelfde resultaat als het scherm) ──
 function printProfVoorstel(fase) {
   if (!zsLaatste || zsLaatste.fase !== fase) { alert('Klik eerst op "Bekijk mijn resultaat".'); return; }
-  const { pcts, plan } = zsLaatste;
+  const { pcts, plan, vergelijk } = zsLaatste;
   const COLS_PRINT = { ict: '#0f5c8a', media: '#7b2d8b', comp: '#c25c0a' };
   const LABS = { ict: 'ICT-basisvaardigheden', media: 'Mediawijsheid', comp: 'Computationeel denken' };
   const prof = ZS_PROF[fase] || {};
@@ -5238,6 +5415,7 @@ function printProfVoorstel(fase) {
   }).join('')}
   <p style="font-size:12px;color:#888">${max - min < ZS_EVENWICHT ? 'Evenwichtig profiel — geen leerlijn springt eruit.' : 'Groeikans: <strong>' + groei.map(ll => LABS[ll]).join(' & ') + '</strong>'}</p>
 
+  ${vergelijk ? '<p style="font-size:12px;color:#666">Vergeleken met ' + vergelijk.datum.toLocaleDateString('nl-BE') + ': ' + ZS_LL.map(ll => LABS[ll] + ' ' + vergelijk.pcts[ll] + '% → ' + pcts[ll] + '%').join(' · ') + '</p>' : ''}
   <h2>Professionaliseringsvoorstel per leerlijn</h2>
   ${ZS_LL.map(ll => {
     const n = zsNiveau(pcts[ll]);
@@ -6020,6 +6198,143 @@ async function loadJaarplanFromSP() {
   }
 }
 // ═══════════════════════════════════════════
+// LES INDIENEN — leerkrachten bezorgen eigen lessen aan de ICT-coördinator
+// Bestanden + een samenvatting (indiening.txt) komen in een eigen map in de
+// documentbibliotheek van de DigiKompas-site:
+//   <CFG.indienMap>/<datum> <naam> - <titel>/
+// De ICT-coördinator zet de les om naar het DigiKompas-formaat en voegt ze toe.
+// ═══════════════════════════════════════════
+const INDIEN_MAX_MB = 50;
+const INDIEN_TYPES = '.pdf,.docx,.doc,.pptx,.ppt,.xlsx,.odt,.odp,.jpg,.jpeg,.png,.txt';
+
+function openIndienen() {
+  const m = document.getElementById('indien-modal');
+  m.classList.add('open');
+  document.getElementById('indien-form').style.display = '';
+  document.getElementById('indien-klaar').style.display = 'none';
+  document.getElementById('indien-fout').style.display = 'none';
+  const login = document.getElementById('indien-login-info');
+  login.innerHTML = dkToken
+    ? `Je dient in als <strong>${dkNaam || dkEmail}</strong>.`
+    : `⚠ Je bent niet aangemeld. Open DigiKompas via ${TENANT === 'LON' ? 'MijnDigiLoket' : 'MijnDigiKAntoor'} om te kunnen indienen.`;
+  document.getElementById('indien-verstuur').disabled = !dkToken;
+}
+function sluitIndienen() { document.getElementById('indien-modal').classList.remove('open'); }
+
+function indienBestandenInfo() {
+  const files = [...document.getElementById('in-bestanden').files];
+  document.getElementById('in-bestanden-lijst').innerHTML = files.map(f => {
+    const mb = f.size / 1048576;
+    return `<div style="${mb > INDIEN_MAX_MB ? 'color:#c0392b' : ''}">📎 ${f.name} · ${mb < 1 ? Math.max(1, Math.round(f.size / 1024)) + ' kB' : mb.toFixed(1) + ' MB'}${mb > INDIEN_MAX_MB ? ' — te groot (max ' + INDIEN_MAX_MB + ' MB)' : ''}</div>`;
+  }).join('');
+}
+
+// Bestandsnaam veilig maken voor SharePoint
+function spVeiligeNaam(t) {
+  return (t || '').replace(/["*:<>?/\\|#%~&{}]/g, '').replace(/\s+/g, ' ').replace(/^\.+|\.+$/g, '').trim().slice(0, 80) || 'zonder titel';
+}
+
+// Upload via een upload-sessie (werkt voor kleine én grote bestanden)
+async function spUploadBestand(pad, blob) {
+  const padUrl = encodeURI(pad).replace(/#/g, '%23');
+  const sessie = await dkPost('/sites/' + CFG.siteId + '/drive/root:/' + padUrl + ':/createUploadSession',
+    { item: { '@microsoft.graph.conflictBehavior': 'rename' } });
+  if (!sessie || !sessie.uploadUrl) throw new Error('Kon geen uploadsessie starten voor ' + pad);
+  const BLOK = 320 * 1024 * 12; // ±3,75 MB, veelvoud van 320 KiB zoals Graph vereist
+  const totaal = blob.size;
+  if (totaal === 0) throw new Error('Leeg bestand: ' + pad);
+  for (let start = 0; start < totaal; start += BLOK) {
+    const eind = Math.min(start + BLOK, totaal);
+    const r = await fetch(sessie.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Range': `bytes ${start}-${eind - 1}/${totaal}` },
+      body: blob.slice(start, eind),
+    });
+    if (!r.ok && r.status !== 202) throw new Error('Upload mislukt (' + r.status + ') voor ' + pad);
+  }
+}
+
+async function verstuurIndiening() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const titel = v('in-titel'), ll = v('in-ll'), fase = v('in-fase'), duur = v('in-duur');
+  const omschr = v('in-omschr'), verloop = v('in-verloop'), opm = v('in-opm');
+  const bron = document.querySelector('input[name="in-bron"]:checked')?.value || '';
+  const bronInfo = v('in-bron-info');
+  const naamTonen = document.getElementById('in-naam').checked;
+  const files = [...document.getElementById('in-bestanden').files];
+  const fout = document.getElementById('indien-fout');
+  const meld = t => { fout.innerHTML = '⚠ ' + t; fout.style.display = 'block'; fout.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+
+  if (!dkToken) return meld('Je bent niet aangemeld.');
+  if (!titel) return meld('Geef je les een titel.');
+  if (!ll) return meld('Kies een leerlijn.');
+  if (!fase) return meld('Kies een fase.');
+  if (!omschr) return meld('Beschrijf kort wat leerlingen leren of doen.');
+  if (!files.length && !verloop) return meld('Voeg een bestand toe of beschrijf het lesverloop.');
+  if (!bron) return meld('Duid aan of het eigen materiaal is.');
+  if (bron === 'methode' && !bronInfo) return meld('Vermeld op welke methode of bron je les gebaseerd is.');
+  const teGroot = files.find(f => f.size > INDIEN_MAX_MB * 1048576);
+  if (teGroot) return meld(`${teGroot.name} is groter dan ${INDIEN_MAX_MB} MB.`);
+
+  fout.style.display = 'none';
+  const knop = document.getElementById('indien-verstuur');
+  const status = document.getElementById('indien-status');
+  knop.disabled = true;
+
+  const datum = new Date();
+  const dStr = datum.toISOString().slice(0, 10);
+  const map = `${CFG.indienMap}/${spVeiligeNaam(dStr + ' ' + (dkNaam || dkEmail) + ' - ' + titel)}`;
+  const LLN = { ict: 'ICT-basisvaardigheden', comp: 'Computationeel denken', media: 'Mediawijsheid', onbekend: 'Weet ik niet' };
+  const samenvatting = [
+    'LESINDIENING DIGIKOMPAS',
+    '========================',
+    `Ingediend op:   ${datum.toLocaleString('nl-BE')}`,
+    `Door:           ${dkNaam || ''} <${dkEmail}>`,
+    `Naam tonen:     ${naamTonen ? 'ja' : 'nee'}`,
+    '',
+    `Titel:          ${titel}`,
+    `Leerlijn:       ${LLN[ll] || ll}`,
+    `Fase:           ${fase === 'onbekend' ? 'Weet ik niet' : FL[fase]}`,
+    `Duur:           ${duur || '—'}`,
+    `Bron:           ${bron === 'eigen' ? 'Volledig eigen materiaal' : 'Gebaseerd op: ' + bronInfo}`,
+    '',
+    'WAT LEREN OF DOEN DE LEERLINGEN?',
+    omschr,
+    '',
+    'LESVERLOOP',
+    verloop || '(zie bijgevoegde bestanden)',
+    '',
+    'OPMERKINGEN',
+    opm || '—',
+    '',
+    'BESTANDEN',
+    files.length ? files.map(f => '- ' + f.name).join('\n') : '(geen)',
+  ].join('\r\n');
+
+  try {
+    status.textContent = 'Samenvatting opslaan…';
+    await spUploadBestand(map + '/indiening.txt', new Blob(['﻿' + samenvatting], { type: 'text/plain' }));
+    for (let i = 0; i < files.length; i++) {
+      status.textContent = `Bestand ${i + 1} van ${files.length} uploaden: ${files[i].name}…`;
+      await spUploadBestand(map + '/' + spVeiligeNaam(files[i].name), files[i]);
+    }
+    status.textContent = '';
+    document.getElementById('indien-form').style.display = 'none';
+    document.getElementById('indien-klaar').style.display = 'block';
+    document.getElementById('indien-form-el').reset();
+    document.getElementById('in-bestanden-lijst').innerHTML = '';
+  } catch (e) {
+    console.error('DigiKompas: indienen mislukt', e);
+    status.textContent = '';
+    meld(`Indienen is niet gelukt (${e.message}). Probeer later opnieuw of bezorg je les rechtstreeks aan de ICT-coördinator${CFG.ictMail ? ' (<a href="mailto:' + CFG.ictMail + '?subject=' + encodeURIComponent('Lesindiening DigiKompas: ' + titel) + '">' + CFG.ictMail + '</a>)' : ''}.`);
+  } finally {
+    knop.disabled = false;
+  }
+}
+
+document.getElementById('indien-modal').addEventListener('click', function (e) { if (e.target === this) sluitIndienen(); });
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 renderLeerplanDoelen();
@@ -6027,7 +6342,7 @@ dkInit().then(async () => {
   updateCounts();
   renderGrid();
   showView('zelfscan');
-  await Promise.all([loadEigenGegevenLessen(), loadAlleBeoordelingen()]);
+  await Promise.all([loadEigenGegevenLessen(), loadAlleBeoordelingen(), loadZelfscans()]);
   renderGrid();
   await teamToegangProbe();
   if (document.getElementById('nav-team')) {
